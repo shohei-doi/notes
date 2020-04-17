@@ -1,0 +1,197 @@
+---
+title: "RとMeCabで分かち書き"
+description: |
+  RでMeCabによって分かち書きをしてQuantedaで分析できるようにします。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - text analysis
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+テキスト分析を行う場合は、文書を単語に分割してbag of wordsとして扱うことが標準的です。
+英語など欧文の場合は、スペースで単語ごとに分割されているので問題ありませんが、日本語などの場合は単語の切れ目が分からないので、分かち書きをする必要があります。
+ここでは、日本語の文書を分かち書きして、`quanteda`による分析を行えるようにする方法を紹介します。
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+library(quanteda)
+library(readtext)
+```
+
+分かち書きに必要なパッケージは後述します。
+
+### データの読み込み
+
+今回は[Twitterのデータ](https://shohei-doi.github.io/notes/posts/2019-04-18-scraping-twitter/)を用います。
+「安倍」もしくは「アベ」が含まれているツイートを約10000件集めました。
+
+```{r}
+tweets <- readtext("data/abe_tweets.csv", text_field = "text", encoding = "utf-8")
+```
+
+以下の様なコードで2020年1月16日に集めました。
+
+```{r, eval=FALSE}
+library(rtweet)
+tweets <- search_tweets("安倍 OR アベ", n = 10000, include_rts = FALSE)
+tweets %>% 
+  select(screen_name, created_at, text) %>% 
+  write_csv("data/abe_tweets.csv")
+```
+
+## quanteda標準の方法 {#Quanteda}
+
+まず、`quanteda`でコーパスを作成します。
+
+```{r}
+corp <- corpus(tweets)
+```
+
+
+`quanteda`の[クイックスタート](https://quanteda.io/articles/pkgdown/examples/japanese_speech_ja.html)や[tutorials](https://tutorials.quanteda.io/language-specific/japanese/#refining-tokens)のページによれば、`tokens()`によって分かち書きをすることができます。
+
+```{r}
+toks <- tokens(corp)
+toks[1]
+```
+
+目的にもよりますが、まずはひらがな、カタカナ、漢字のトークンだけを残します。
+
+```{r}
+toks <- tokens_select(toks, "^[０-９ぁ-んァ-ヶー一-龠]+$", valuetype = "regex", padding = TRUE)
+toks[1]
+```
+
+- `valuetype = "regex"`は正規表現による指定を意味します。
+- `padding = TRUE`は取り除かれたトークンも空白として残しておきます。
+
+この例の場合、「生活」と「保護」や「消費」と「税」が別の単語として認識されていますが、もしかすると「生活保護」や「消費税」で1単語にしたいかもしれません。
+このような場合、隣同士で同時に出現する回数によって一つの単語として連結させることも考えられます。
+
+```{r}
+min_count <- 10
+
+# 漢字
+kanji_col <- tokens_select(toks, "^[一-龠]+$", valuetype = "regex", padding = TRUE) %>% 
+             textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, kanji_col[kanji_col$z > 3,], concatenator = "")
+
+# カタカナ
+kana_col <- tokens_select(toks, "^[ァ-ヶー]+$", valuetype = "regex", padding = TRUE) %>% 
+            textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, kana_col[kana_col$z > 3,], concatenator = "")
+
+# 漢字，カタカナおよび数字
+any_col <- tokens_select(toks, "^[０-９ァ-ヶー一-龠]+$", valuetype = "regex", padding = TRUE) %>% 
+           textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, any_col[any_col$z > 3,], concatenator = "")
+
+toks[1]
+```
+
+- 「生活保護」や「消費税」が一つの単語になりました。
+
+## MeCabによる方法 {#MeCab}
+
+もう一つのやり方は形態素解析のツールを用いる方法です。
+形態素解析自体は分かち書きというよりは品詞分解ですが、その過程で分かち書きがなされます。
+
+形態素解析のツールは色々とありますが、とりあえず[MeCab](https://taku910.github.io/mecab/)を使います。
+また、Rから`MeCab`を使うために[RcppMeCab](https://github.com/junhewk/RcppMeCab)というパッケージをインストールします。
+
+まずは`RcppMeCab`を読み込みます。
+
+```{r}
+library(RcppMeCab)
+```
+
+`pos()`によって形態素解析を行います。
+
+- [mecab-ipadic-Neologd](https://github.com/neologd/mecab-ipadic-neologd/blob/master/README.ja.md)などによって辞書を拡張することができます。
+
+```{r}
+pos("メロスは激怒した。", join = FALSE)
+```
+
+- 品詞分解されています。
+
+コーパスのテキストに形態素解析をかけます。
+
+```{r}
+toks <- corp %>% 
+  texts() %>% 
+  map(~unlist(pos(., join = FALSE))) %>% 
+  as.tokens()
+toks[1]
+```
+
+- 先ほどと大して変わりませんが、「生活保護費」や「札幌市役所」といった単語が取れています。
+
+せっかくなので先ほどと同様にトークンを「きれい」にします。
+
+```{r}
+toks <- tokens_select(toks, "^[０-９ぁ-んァ-ヶー一-龠]+$", valuetype = "regex", padding = TRUE)
+
+min_count <- 10
+
+kanji_col <- tokens_select(toks, "^[一-龠]+$", valuetype = "regex", padding = TRUE) %>% 
+             textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, kanji_col[kanji_col$z > 3,], concatenator = "")
+
+kana_col <- tokens_select(toks, "^[ァ-ヶー]+$", valuetype = "regex", padding = TRUE) %>% 
+            textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, kana_col[kana_col$z > 3,], concatenator = "")
+
+any_col <- tokens_select(toks, "^[０-９ァ-ヶー一-龠]+$", valuetype = "regex", padding = TRUE) %>% 
+           textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, any_col[any_col$z > 3,], concatenator = "")
+
+toks[1]
+```
+
+`MeCab`で分かち書きをした場合、文書のメタデータ（作成日など）はトークンには残されていません。
+
+```{r}
+docvars(toks)
+```
+
+そこで、コーパスのメタデータで上書きをします。
+
+```{r}
+docvars(toks) <- docvars(corp)
+head(docvars(toks))
+```
+
+## 文書単語行列 {#DFM}
+
+いずれの方法にせよ、あとは`dfm()`で文書単語行列を作成して、`quanteda`の様々な分析ツールを使うことができます。
+
+```{r}
+tw_dfm <- dfm(toks, remove = "")
+```
+
+- 実際にはこの段階でさらにいらない単語を削ったりしていきます。

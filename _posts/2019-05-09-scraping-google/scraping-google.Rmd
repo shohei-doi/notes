@@ -1,0 +1,260 @@
+---
+title: "スクレイピング：Googleトレンド編"
+description: |
+  RでAPI経由でGoogleトレンドと検索ヒット数のクローリング&スクレイピングをする方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - crawling/scraping
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+Googleで特定の単語がどれくらい検索されているのかは[Googleトレンド](https://trends.google.co.jp/trends/)で調べることができます。
+
+- 正確には、「検索数」ではなく「ピーク時を100としたときの検索割合」になります。
+
+<aside>
+  詳しくは[こちら](http://ysklog.net/googleanalytics/5632.html)を参照。
+</aside>
+
+そして、「google trends R」のように検索するとGoogleトレンドのAPIをRから叩けるパッケージがあることが分かりますので、それを使ってみます。
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(gtrendsR)
+library(rmarkdown)
+```
+
+## 時系列トレンド {#Time}
+
+### 一つの単語
+
+`gtrends()`という関数で検索スコアを取ってくることができます。
+ここでは、小泉純一郎と小泉進次郎の検索トレンドを調べてみます。
+
+```{r}
+trend <- gtrends(keyword = "小泉純一郎", geo = "JP")
+plot(trend)
+```
+
+- "geo"オプションで地域を指定できます。
+
+```{r}
+trend <- gtrends(keyword = "小泉進次郎", geo = "JP")
+plot(trend)
+```
+
+### 複数の単語
+
+しかし、このままでは小泉純一郎と小泉進次郎のそれぞれのピークで100となってしまうので、両者の比較をすることはできません。
+そこで、両者を同時に調べてみます。
+
+```{r}
+trend <- gtrends(keyword = c("小泉純一郎", "小泉進次郎"), geo = "JP")
+plot(trend)
+```
+
+息子のほうが注目されていることがわかります。
+
+- ただし、同時に検索できるのは5つまでになります。
+
+## 地域別のトレンド {#Region}
+
+`gtrends`の出力の中身を見てみましょう。
+
+```{r}
+str(trend, max.level = 1)
+```
+
+時系列以外にも地域別のスコアがあるのが分かります。
+
+```{r}
+trend$interest_by_region %>% 
+  paged_table()
+```
+
+グラフにすることもできます。
+
+```{r}
+trend$interest_by_region %>% 
+  mutate(location = str_remove(location, " Prefecture"),
+         keyword = str_remove(keyword, "小泉")) %>% 
+  arrange(location) %>% 
+  ggplot() + 
+  geom_bar(aes(x = keyword, y = hits, fill = keyword), stat = "identity") + 
+  facet_wrap(~location)
+```
+
+## 関連単語 {#Related}
+
+関連検索ワードもあることがわかります。
+
+```{r}
+trend$related_queries %>% 
+  paged_table()
+```
+
+- `related_queries`には`top`と`rising`があります。
+
+## おまけ {#Appendix}
+
+[Yahoo!による2017年衆議院議員選挙の予測](https://about.yahoo.co.jp/info/bigdata/election/2017/01/)をGoodleのデータで再現してみます。
+
+まず、2017年の衆議院議員選挙の結果は高知工科大学の[矢内先生のウェブページ](http://yukiyanai.github.io/jp/resources/scrape-hr2017.html)で公開されているのでお借りします。
+比例ブロックごとに結果があるので、政党ごとに集計します。
+
+```{r}
+data <- read_csv("http://yukiyanai.github.io/jp/resources/data/hr2017_pr_parties.csv") %>% 
+  group_by(party) %>% 
+  summarise(votes = sum(votes))
+paged_table(data)
+```
+
+検索ワードは一度に5つまでしか指定することができないので、最も注目度の高い単語を毎回入れることで調整します。
+今回はYahoo!の結果から立憲民主党が最も注目されてるようなので、立憲民主党をベースラインにします。
+
+- 正式な政党名ではなく「検索で使っていそうな名称」を使います。
+- `time`で公示日から投票日前日までの検索期間を指定します。
+
+```{r}
+trend1 <- gtrends(keyword = c("公明党", "希望の党", "幸福実現党", "支持政党なし", "立憲民主党"), geo = "JP", 
+                  time = "2017-10-10 2017-10-21")
+plot(trend1)
+```
+
+```{r}
+trend2 <- gtrends(keyword = c("新党大地", "日本のこころ", "共産党", "維新の会", "立憲民主党"), geo = "JP", 
+                  time = "2017-10-10 2017-10-21")
+plot(trend2)
+```
+
+```{r}
+trend3 <- gtrends(keyword = c("社民党", "自民党", "立憲民主党"), geo = "JP", 
+                  time = "2017-10-10 2017-10-21")
+plot(trend3)
+```
+
+無事、立憲民主党が一番注目されていることが確認できたので、これらを結合し、立憲民主党の重複を除外します。
+
+```{r}
+trend <- bind_rows(trend1$interest_over_time,
+                   trend2$interest_over_time %>% 
+                     filter(keyword != "立憲民主党"),
+                   trend3$interest_over_time %>% 
+                     filter(keyword != "立憲民主党"))
+```
+
+エラーが出ましたが、これは`hits`には`1<`という場合があるので文字列になっているためです。
+なので、数字をパースしておきます。
+
+```{r}
+trend <- bind_rows(trend1$interest_over_time %>% 
+                     mutate(hits = parse_number(hits)),
+                   trend2$interest_over_time　 %>% 
+                     filter(keyword != "立憲民主党") %>% 
+                     mutate(hits = parse_number(hits)),
+                   trend3$interest_over_time %>% 
+                     filter(keyword != "立憲民主党"))
+```
+
+時系列プロットができました。
+
+```{r}
+trend %>% 
+  ggplot() + 
+  geom_line(aes(x = date, y = hits, colour = keyword))
+```
+
+これを政党ごとに集計し、選挙結果と政党名を揃えます。
+
+```{r}
+trend <- trend %>% 
+  group_by(keyword) %>% 
+  summarise(hits = sum(hits)) %>% 
+  mutate(party = keyword %>% 
+           recode("共産党" = "日本共産党", 
+                  "社民党" = "社会民主党", 
+                  "維新の会" = "日本維新の会", 
+                  "自民党" = "自由民主党"))
+paged_table(trend)
+```
+
+選挙結果のデータと結合し、散布図を作成します。
+
+```{r}
+left_join(data, trend, by = "party") %>% 
+  ggplot() + 
+  geom_text(aes(x = hits, y = votes, label = party)) + 
+  geom_smooth(aes(x = hits, y = votes), method = "lm")
+```
+
+Yahoo!の結果と比べると自民党と希望の党の位置がちょっと違いますが、わりかし近いのではないでしょうか。
+
+- どうやら[希望の党はGoogleトレンドで記録されていない](https://trends.google.co.jp/trends/explore?date=2017-10-10%202017-10-21&geo=JP&q=%E5%B8%8C%E6%9C%9B%E3%81%AE%E5%85%9A)ようです。
+
+ちなみに、両軸の対数を取るとこんな感じです。
+
+```{r}
+left_join(data, trend, by = "party") %>% 
+  ggplot() + 
+  geom_text(aes(x = hits, y = votes, label = party)) + 
+  geom_smooth(aes(x = hits, y = votes), method = "lm") + 
+  scale_x_log10() + 
+  scale_y_log10()
+```
+
+## 検索ヒット数 {#Hit}
+
+*(2019年7月3日追記)*ある単語でGoogle検索したときにいくつのウェブサイトにヒットするか知りたいかもしれません。
+このような場合は、検索パラメータをいじって検索します。
+
+<aside>
+  本格的にRヤPythonからブラウザを操作したい場合はSeleniumを使うとよいでしょう。
+</aside>
+
+具体的には、`XXXX`という単語を検索したい場合は`https://www.google.co.jp/search?q=XXXX`とすればいいことが分かります。
+そこで、今回は`新海誠`と`秒速5センチメートル`で検索してみようと思います。
+
+```{r}
+html <- html_session("https://www.google.co.jp/search?q=新海誠+秒速5センチメートル",
+                     httr::user_agent("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:67.0) Gecko/20100101 Firefox/67.0 "))
+```
+
+- 複数の単語で検索する場合は`+`で繋げます。
+- 自分のPCのブラウザのユーザーエージェントを確認して`httr::user_agent()`の中に文字列として入力します。
+
+検索ヒット数は`id`が`resultStats`のタグの中にあることが分かるので、数字をパースします。
+
+```{r}
+hits <- html %>% 
+  html_node("div#resultStats") %>% 
+  html_text() %>% 
+  parse_number()
+hits
+```
+
+- 実際の結果とは少しずれてしまいます。

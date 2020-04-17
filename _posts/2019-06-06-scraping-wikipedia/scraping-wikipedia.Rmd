@@ -1,0 +1,334 @@
+---
+title: "スクレイピング：Wikipedia編"
+description: |
+  RでAPI経由でWikipediaのスクレイピングをする方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - crawling/scraping
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+[Twitterのスクレイピング](https://shohei-doi.github.io/notes/posts/2019-04-18-scraping-twitter/)では10日以上前のツイートを取得できないことを知りました。
+また、[Googleトレンド](https://shohei-doi.github.io/notes/posts/2019-05-09-scraping-google/)は同時に5つまでしか取得できないのに、相対的な値しか取れません。
+そこで、Wikipediaの閲覧数を取得する方法を説明します。
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+Wikipediaの閲覧数は[Pageview Analysis](https://tools.wmflabs.org/pageviews/?project=en.wikipedia.org&platform=all-access&agent=user&range=latest-20&pages=Cat|Dog)のAPIをRから叩く`pageview`というパッケージを使います。
+
+```{r}
+library(pageviews)
+library(gtrendsR)
+```
+
+- Googleトレンドとの比較のために`gtrendsR`も読み込んでみます。
+
+また、Wikipediaの記事の情報を取得するには`WikipediR`というパッケージを使います。
+*（2019年7月19日追記）*直接APIを叩いて情報を取得する際には`httr`というパッケージを使います。
+
+```{r}
+library(WikipediR)
+library(httr)
+library(rvest)
+```
+
+## Wikipediaのトレンド {#Trend}
+
+`pageviews`の`article_pageview()`という関数で閲覧数を取得します。
+ただし、取得できるデータは2015年7月1日以降に限られます。
+
+試しに、小泉純一郎と小泉進次郎の検索数を取得します。
+
+```{r}
+wiki_trend <- article_pageviews(project = "ja.wikipedia",
+                                article = c("小泉純一郎", "小泉進次郎"),
+                                start = "2015070100",
+                                end = Sys.Date())
+```
+
+時系列のグラフにします。
+
+```{r}
+wiki_trend %>% 
+  ggplot() + 
+  geom_line(aes(x = date, y = views, colour = article))
+```
+
+Googleトレンドをも取得してみます。
+スパイクはかなり一致しているように見えます。
+
+```{r}
+google_trend <- gtrends(keyword = c("小泉純一郎", "小泉進次郎"), 
+                        geo = "JP", 
+                        time = str_c("2015-07-01", Sys.Date(), sep = " "))
+plot(google_trend)
+```
+
+両者が相関しているのかどうかを確認します。
+
+```{r}
+full_join(wiki_trend %>% 
+            select(date, term = article, wiki = views),
+          google_trend$interest_over_time %>% 
+            select(date, term = keyword, google = hits),
+          by = c("date", "term")) %>% 
+  ggplot() + 
+  geom_point(aes(x = wiki, y = google, colour = term)) + 
+  facet_wrap(~term)
+```
+
+見にくいので両軸の対数を取ると正の相関がありそうなのが分かります。
+
+```{r}
+full_join(wiki_trend %>% 
+            select(date, term = article, wiki = views),
+          google_trend$interest_over_time %>% 
+            select(date, term = keyword, google = hits),
+          by = c("date", "term")) %>% 
+  ggplot() + 
+  geom_point(aes(x = wiki, y = google, colour = term)) + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~term)
+```
+
+## Wikipediaの記事の情報 {#PageInfo}
+
+`WikipediR`の`page_info()`で記事の情報を取得できます。
+役に立ちそうな情報は記事の長さでしょうか。
+
+```{r}
+wiki_info <- page_info("ja", "wikipedia", page = "小泉進次郎")
+wiki_info$query$pages$`1875027`$length
+```
+
+## Wikipediaの記事 {#PageText}
+
+`page_content()`で`.html`を取得できます。
+`rvest`の`read_html()`で読み込みます。
+
+```{r}
+wiki_page <- page_content("ja", "wikipedia", page_name = "小泉進次郎")
+wiki_html <- wiki_page$parse$text[[1]] %>% 
+  read_html()
+```
+
+とりあえず`p`タグのテキストを抽出します。
+
+```{r}
+wiki_text <- wiki_html %>% 
+  html_nodes("p") %>% 
+  html_text()
+head(wiki_text)
+```
+
+文字列ベクトルを一つの文章にするときは`str_c()`でオプション`collapse = ""`を指定します。
+
+```{r}
+wiki_text <- wiki_text %>% 
+  str_c(collapse = "")
+wiki_text
+```
+
+`str_length()`で文字列の長さを調べることができます。
+
+```{r}
+str_length(wiki_text)
+```
+
+- ページ情報の記事の長さとはだいぶ違います……
+
+## Wikipediaの記事のリンク {#PageLink}
+
+Wikipediaの記事のリンクを求めることもできます。
+記事にある他のWikipedia記事へのリンク、外部サイトへのリンク、当該記事にリンクを貼っている他のWikipedia記事のリンクをそれぞれ求めることができます。
+
+```{r}
+internal_link <- page_links("ja", "wikipedia", page = "小泉進次郎", limit = 500)
+external_link <- page_external_links("ja", "wikipedia", page = "小泉進次郎")
+back_link <- page_backlinks("ja", "wikipedia", page = "小泉進次郎")
+```
+
+- 内部リンクは最大500個までしか取れないようです。
+
+## テキスト分析入門`*` {#Text}
+
+せっかくなので、初歩的なテキスト分析を行います。
+まずは、小泉純一郎と小泉進次郎のWikipediaのページを取得します。
+
+```{r}
+term <- c("小泉純一郎", "小泉進次郎")
+data <- NULL
+for (i in term) {
+  text <- page_content("ja", "wikipedia", page_name = i)
+  text <- text$parse$text[[1]] %>% 
+    read_html() %>% 
+    html_nodes("p") %>% 
+    html_text() %>% 
+    str_c(collapse = "")
+  data <- tibble(term = i,
+                 text) %>% 
+    bind_rows(data)
+}
+```
+
+テキスト分析には`quanteda`というパッケージを使うのが便利です。
+
+- 日本語の[クイックスタート](https://quanteda.io/articles/pkgdown/quickstart_ja.html)や開発者の一人である早稲田大学の渡辺さんの[チュートリアル](https://github.com/koheiw/workshop-IJTA)が参考になります。
+
+```{r}
+library(quanteda)
+```
+
+まずは、データフレームをコーパスに変換します。
+コーパスとはテキストのデータという意味な気がします。
+
+```{r}
+corp <- corpus(data, text_field = "text")
+```
+
+続いてトークンを作成します。
+トークンとは単語というような意味で、日本語の場合は単語で区切られていないので形態素解析をする必要があります。
+
+MecabやChasenが形態素解析ではメジャーですが、Rで実行するのは若干面倒なので、[quantedaのクイックスタート](https://quanteda.io/articles/pkgdown/examples/japanese_speech_ja.html)で使用されているで例を使います。
+
+```{r}
+toks <- tokens(corp)
+toks <- tokens_select(toks, "^[０-９ぁ-んァ-ヶー一-龠]+$", valuetype = "regex", padding = TRUE)
+
+min_count <- 10
+
+kanji_col <- tokens_select(toks, "^[一-龠]+$", valuetype = "regex", padding = TRUE) %>% 
+             textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, kanji_col[kanji_col$z > 3,], concatenator = "")
+
+kana_col <- tokens_select(toks, "^[ァ-ヶー]+$", valuetype = "regex", padding = TRUE) %>% 
+            textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, kana_col[kana_col$z > 3,], concatenator = "")
+
+any_col <- tokens_select(toks, "^[０-９ァ-ヶー一-龠]+$", valuetype = "regex", padding = TRUE) %>% 
+           textstat_collocations(min_count = min_count)
+toks <- tokens_compound(toks, any_col[any_col$z > 3,], concatenator = "")
+```
+
+文章が単語に区切られたのが分かります。
+
+```{r}
+head(toks$text1)
+head(toks$text2)
+```
+
+最後に、トークンを文書行列にします。
+文書行列とは各テキストを単語のベクトルにしたものです。
+
+- ここで、1文字だけの単語や、頻度が高すぎる、低すぎる単語を削除します。
+
+```{r}
+wiki_dfm <- dfm(toks, remove = "") %>% 
+    dfm_remove("^[ぁ-ん]+$", valuetype = "regex", min_nchar = 2) %>% 
+    dfm_trim(min_termfreq = 0.50, termfreq_type = "quantile", max_termfreq = 0.99)
+```
+
+各記事の上位30の単語頻度を求めてみます。
+
+```{r}
+freq <- textstat_frequency(wiki_dfm, group = "term")
+freq %>% 
+  filter(group == "小泉純一郎") %>% 
+  filter(rank <= 30) %>% 
+  mutate(feature = feature %>% 
+           fct_inorder() %>% 
+           fct_rev()) %>% 
+  ggplot(aes(x = feature, y = frequency)) + 
+  geom_point() + 
+  coord_flip()
+freq %>% 
+  filter(group == "小泉進次郎") %>% 
+  filter(rank <= 30) %>% 
+  mutate(feature = feature %>% 
+           fct_inorder() %>% 
+           fct_rev()) %>% 
+  ggplot(aes(x = feature, y = frequency)) + 
+  geom_point() + 
+  coord_flip()
+```
+
+ワードクラウドを作成します。
+
+```{r}
+dfm_subset(wiki_dfm, term == "小泉純一郎") %>% 
+  textplot_wordcloud(max_words = 50)
+dfm_subset(wiki_dfm, term == "小泉進次郎") %>% 
+  textplot_wordcloud(max_words = 50)
+```
+
+
+## Wikipediaの記事の作成日の取得 {#Date}
+
+*（2010年7月19日追記）*直接APIを叩いてWikipediaの記事の作成日を取得してみます。
+
+まず、検索したい単語のベクトルを作成します。
+
+```{r}
+key.words <- c("新世紀エヴァンゲリオン", "魔法少女まどか☆マギカ", "けものフレンズ")
+```
+
+続いて、作成日を格納する空のベクトルを作成します。
+
+```{r}
+wiki.date <- NULL
+```
+
+最後に、ループによって各単語の記事の作成日を取得します。
+
+```{r}
+for (i in key.words) {
+  wiki.date <- c(wiki.date,
+                 GET("https://ja.wikipedia.org/w/api.php",
+                     query = list(action = "query",
+                                  prop = "revisions",
+                                  rvlimit = 1,
+                                  rvprop = "timestamp",
+                                  rvdir = "newer",
+                                  titles = i,
+                                  format = "json")) %>% 
+                   content("text") %>% 
+                   str_extract("[0-9]+-[0-9]+-[0-9]+"))
+}
+```
+
+念のため、データフレームにしておきます。
+
+```{r}
+df <- tibble(key.words,
+             wiki.date)
+df
+```
+

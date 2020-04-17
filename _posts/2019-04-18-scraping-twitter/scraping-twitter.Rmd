@@ -1,0 +1,164 @@
+---
+title: "スクレイピング：Twitter編"
+description: |
+  RでAPI経由でTwitterのクローリング&スクレイピングをする方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - crawling/scraping
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+PCを使ってオンラインの情報を取得することをクローリング、そこから必要な情報を得ることをスクレイピングと呼びます（きっと）。
+しかし、大抵の場合は両者は一緒に行われるので、断りがない限り合わせてスクレイピングと呼ぶこととします。
+
+API (Application Programming Interface) とはプログラミングによってアプリケーションを利用するための機能です。
+いまいちよく分かりませんが、今回はTwitterのスクレイピングを例にAPIの使い方を紹介します。
+
+### パッケージの読み込み
+
+とは言ってもRで直接APIを叩くのは大変なので、Rのパッケージを使いたいと思います。
+RからTwitter APを叩くパッケージで有名なものには`rtweet`と`twitteR`があり違いはよく分かりませんが、今回は前者を使いたいと思います。
+
+<aside>
+  なぜかAPIは叩くものとされています。
+</aside>
+
+```{r}
+library(tidyverse)
+library(rtweet)
+library(rmarkdown)
+```
+
+### Twitterアカウントの作成
+
+[Twitter](https://twitter.com/)アカウントが必要なので作成します。
+
+### 認証
+
+実は、これまではAPIを使うためのアカウント認証がめんどくさかったのですが`rtweet`だと自動でやってくれるらしいです。
+具体的には最初に`rtweet`の関数を使うと認証を求められるので、許可するだけです。
+
+<aside>
+  [こちら](https://notchained.hatenablog.com/entry/2018/02/09/143304)を参照。
+</aside>
+
+## 単語によるツイートの取得 {#Keyword}
+
+`serch_tweet()`で単語で検索してツイートをスクレイピングしてくれます。
+今回は`けものフレンズ`で100件取得してみます。
+
+<aside>
+  一回につき最大で18000件まで取得できるそうです。
+</aside>
+
+```{r}
+tweets <- search_tweets("けものフレンズ", n = 100)
+tweets %>% 
+  select(text) %>% 
+  paged_table()
+```
+
+いろいろありますが`text`変数にツイートがあることがわかります。
+
+## ユーザーによるツイートの取得 {#User}
+
+`get_timelines()`では特定のユーザーのタイムラインを取得することができます。
+例えば、ドナルド・トランプの[公式アカウント](https://twitter.com/realdonaldtrump)`@realDonaldTrump`のツイートを取得するにはこのようにします。
+
+```{r}
+tweets <- get_timelines("realDonaldTrump", n = 100)
+tweets %>% 
+  select(text) %>% 
+  paged_table()
+```
+
+## 言語によるツイートの取得 {#Lang}
+
+ツイ廃の間では周知の事実だとは思いますが、ツイッターの検索クエリは（例えば[このような](https://www.howtonote.jp/twitter/search/index2.html)）オプションを付けることでより細かい指定をすることができます。
+例えば、日本語のツイートのみを取得する場合は次のようにします。
+
+```{r}
+tweets <- search_tweets("lang:jp", n = 100)
+tweets %>% 
+  select(text) %>% 
+  paged_table()
+```
+
+## 地域によるツイートの取得 {#Location}
+
+特定の地域でつぶやかれたツイートのみを取得することもできます。
+
+そのためには東京の地理情報を得るためにGoogle MapsのAPIに登録する必要があります。
+まずは、[Google Maps Platform](https://cloud.google.com/maps-platform/)に行き、登録します。
+クレジットカード情報を入力しますが、一年間は無料で使え、期限後に自動請求されることは無いはずです。
+
+登録を完了すると[Google Cloud Platform](https://console.cloud.google.com)の`APIとサービス`内の`認証情報`に`API key`が表示されているので、それをコピペして例えば`apikey`のようなオブジェクトにします。
+
+```{r, echo = FALSE}
+apikey <- "AIzaSyCV2q4tF6c5BTF3vhpeeU5ZEO6WxJixSJQ"
+```
+
+例えば、京都でつぶやかれたツイートのみを取得する場合は次のようにします。
+
+```{r}
+tweets <- search_tweets("", geocode = lookup_coords("kyoto, jp", apikey = apikey), n = 100)
+tweets %>% 
+  select(text) %>% 
+  paged_table()
+```
+
+## ライブストリームの取得 {#Live}
+
+今からつぶやかれる全てのツイートからランダムサンプリングする場合は`stream_tweets()`を使います。
+デフォルトでは30秒間のツイートを取得します。
+
+```{r}
+tweets <- stream_tweets("", timeout = 5)
+tweets %>% 
+  select(text) %>% 
+  paged_table()
+```
+
+### 地域のライブストリームの取得
+
+しかし、全世界のツイートを欲しいという状況は少ないと思います。
+例えば、東京でつぶやかれるツイートのみを取得したいとします。
+
+```{r}
+tweets <- stream_tweets(lookup_coords("tokyo, jp", apikey = apikey), timeout = 5)
+tweets %>% 
+  select(text) %>% 
+  paged_table()
+```
+
+- 他にもキーワードやユーザーIDでも取得することができます（その場合はGoogle MapsのAPIキーは必要ありません）。
+
+*（2019年5月9日追記）*ツイート時間`created_at`はグリニッジ標準時で記録されているので、日本時間にするには9時間だけ足す必要があります。
+
+## その他の情報の取得 {#Others}
+
+- `get_friends()`：特定のユーザーがフォローしているユーザーを取得する。
+- `get_followers()`：特定のユーザーをフォローしているユーザーを取得する。
+- `get_favarites()`：特定のユーザーのいいねを取得する。

@@ -1,0 +1,397 @@
+---
+title: "Rで機械学習：分類編"
+description: |
+  Rで機械学習による分類を行ういくつかの方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - data analysis
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+機械学習の分野では[（多項）ロジット](https://shohei-doi.github.io/notes/posts/2019-05-19-logistic/)のように、クラスを予測することを分類(classification)と呼びます。
+一方で、[最小二乗法](https://shohei-doi.github.io/notes/posts/2019-05-17-regression/)のように連続値を予測することを回帰(regression)と呼びます。
+
+今回は代表的な機械学習の分類手法である
+
+1. ロジスティック回帰
+1. 決定木
+1. ランダムフォレスト
+1. サポート・ベクター・マシン (SVM)
+1. ニューラルネット
+
+について、Rで行う方法を紹介します。
+
+- 実は回帰を行うときもほとんどやることは変わりません。
+
+### 必要なパッケージの読み込み
+
+Rで機械学習を行う便利なパッケージとして`caret`と`mlr`があります（らしいです）。
+今回は`caret`を使ってみます。
+
+```{r}
+library(tidyverse)
+library(caret)
+```
+
+### 必要なデータの読み込み
+
+例のごとく、[東大・朝日共同調査](http://www.masaki.j.u-tokyo.ac.jp/utas/utasv.html)の2014年衆院選・2016年参院選世論調査のデータを使います。
+
+```{r}
+data <- read_csv("http://www.masaki.j.u-tokyo.ac.jp/utas/2014_2016UTASV20161004.csv", 
+                 locale = locale(encoding = "shift-jis"), na = c("66", "99", "999"))
+```
+
+- 非該当は`66`で、無回答は`99`なので、これらを欠損値として読み込んでおきます。
+
+### 下ごしらえ
+
+データセットの内、分析に使う変数を抜き出しておきます。
+更に、数値ではなくカテゴリカルデータである
+
+- 投票に行ったかどうか
+- どの政党に投票したのか
+- 性別
+- 学歴
+- 職業
+
+については`as.factor()`でカテゴリカルデータ（因子型）に変形しておきます。
+
+```{r}
+data <- data %>% 
+  select(vote = W1Q1,
+         party = W1Q2,
+         sex = W1F1,
+         age = W1F2,
+         educ = W1F3,
+         job = W1F4,
+         W1Q7, W1Q8, W1Q9, W1Q10, W1Q11, W1Q12, W1Q13, W1Q14_1,
+         W1Q16_1, W1Q16_2, W1Q16_3, W1Q16_4, W1Q16_5, W1Q16_6, 
+         W1Q16_7, W1Q16_8, W1Q16_9, W1Q16_10, W1Q16_11, 
+         W1Q16_12, W1Q16_13, W1Q16_14, W1Q16_15, W1Q16_16, W1Q16_17,
+         W1Q19_1)%>% 
+  mutate(vote = vote - 1,
+         vote = as.factor(vote),
+         party = as.factor(party),
+         sex = as.factor(sex),
+         educ = as.factor(educ),
+         job = as.factor(job))
+```
+
+さらに、投票するかどうかを予測するデータセットと
+
+```{r}
+data_vote <- data %>% 
+  select(-party) %>%
+  rename(target = vote) %>% 
+  drop_na()
+```
+
+投票先を予測するデータセットをそれぞれ分けておきます。
+
+```{r}
+data_party <- data %>% 
+  select(-vote) %>%
+  rename(target = party) %>% 
+  drop_na()
+```
+
+- まず、予測しない方の変数（投票するかどうかの場合は投票先、投票先の場合は投票するかどうか）を削除しておきます。
+- 予測したい変数を`target`という名前に変えておきます。
+- 欠損値のあるサンプルを`drop_na()`で削除しておきます。
+
+### シード値の設定
+
+いくつかの分析手法では乱数を用います。
+その名の通り乱数は毎回違う値が出てくるので、分析結果も変わってきます。
+
+そこで、乱数を発生させるときの基準となるシード値を設定することで、毎回同じ乱数が発生するようにします。
+
+```{r}
+set.seed(334)
+```
+
+### 機械学習の分類`*`
+
+余談までに、機械学習全般の代表的な手法を概説します。
+
+ちなみに、分類や回帰のように目的変数という正解が存在して、それを予測することを教師付き(supervised)学習と呼びます。
+計量経済学や統計的因果推論は予測が主目的ではないですが、応答変数があるという意味で教師付き学習でと手法を共有しています。
+
+逆に正解が存在せず、機械にデータから見えない構造を抽出させることを教師なし(unsupervised)学習と言います。
+よくあるのはk-meansや混合ガウス分布(Gaussian mixture)、潜在ディリクレ配分(latent dirichlet allocation)によるクラスタリングです。
+
+<aside>
+  教師付きのclassificationを識別、教師なしのclusteringを分類と呼ぶ人もいます。
+  また、両者を合わせてパターン認識と呼ぶこともあります。
+</aside>
+
+強化学習(reinforcement learning)とは正解は無いものの、目的は存在し、その目的を実現するための行動を学習するものです。
+例えば、AlphaGo Zeroでは実際の棋譜を正解として使うのではなく、PC同士に何十日も戦わせて勝利という目的に近づく行動を学習しました。
+
+## ロジスティック回帰 {#Logit}
+
+ロジスティック回帰の方法は[以前](https://shohei-doi.github.io/notes/posts/2019-05-19-logistic/)、解説をしましたが、比較のためにもう一度やります。
+
+`caret`では`train()`の中に`formula`、使用するデータ、分析手法を入力します。
+まずは、年齢だけで予測してみます。
+
+```{r}
+vote_logit <- train(
+  target ~ age,
+  data = data_vote,
+  method = "glm",
+  family = binomial()
+)
+```
+
+その後、`predict()`に分析したモデルと予測したいデータセットを入れて予測を行います。
+予測結果と実際の値（今回は`target`）との比較を`confusionMatrix()`で行います。
+
+```{r}
+confusionMatrix(predict(vote_logit, data_vote), data_vote$target)
+```
+
+いろいろ出てきますが、`Accuracy`を見ると72%ほどの予測精度があることが分かります。
+
+<aside>
+  前回と若干違うのは、回答に欠損があるサンプルを取り除いて、サンプルサイズが異なるからです。
+</aside>
+
+多項ロジットもほぼ同様に行います。
+
+- `trace = FALSE`とすることで分析の経過を非表示にできます。
+
+```{r}
+party_logit <- train(
+  target ~ age,
+  data = data_party,
+  method = "multinom",
+  trace = FALSE
+)
+
+confusionMatrix(predict(party_logit, data_party), data_party$target)
+```
+
+やはり、前回とほぼ同様の32%の予測精度があります。
+
+### 予測精度のからくり
+
+ところで、前回の記事で、これには「からくり」があると言いましたが、それは各分析結果の最初の表を見ると分かります。
+
+表では縦軸に予測結果、横軸に実際の値があります。
+それぞれのセルの中には該当するサンプルサイズが表示されています。
+つまり、対角線上にある数が正解数を意味しています。
+
+しかし、投票するかどうかでは全て`1`（＝投票に行く）と予測しており、投票先でも全て`1`（＝自民党に投票する）と予測しています。
+そして、実際に投票に行った人が7割、自民党に投票した人が3割いるので、先程の予測精度になったということでした。
+
+つまり、単純に正答率を予測精度として見る場合、その下限は0%ではないということです。
+
+### 特徴量を増やす
+
+予測精度を高めるシンプルな方法は特徴量を増やすことです。
+年齢に加えて性別、学歴、職業、現状や政策に関する意見（問7から14,16(1)から(17)に対する答え）を入れて分析してみます。
+
+- `formula`の右辺を`.`とすることで「左辺の変数以外の全て」を意味します。
+
+```{r}
+vote_logit <- train(
+  target ~ .,
+  data = data_vote,
+  method = "glm",
+  family = binomial()
+)
+
+confusionMatrix(predict(vote_logit, data_vote), data_vote$target)
+```
+
+```{r}
+party_logit <- train(
+  target ~ .,
+  data = data_party,
+  method = "multinom",
+  trace = FALSE
+)
+
+confusionMatrix(predict(party_logit, data_party), data_party$target)
+```
+
+投票行動については若干の、投票先については大幅な改善が見られました。
+
+## 決定木 {#DecisionTree}
+
+もう一つのアプローチは分析手法を変えることです。
+`caret`の便利な点は様々な分類器をまとめて利用することができる点です。
+
+<aside>
+  機械学習では分類をするモデルを分類器(classifier)と呼ぶことがあります。
+</aside>
+
+- しかし、`caret`自体にアルゴリズムは入っていないので、適宜、必要なパッケージをインストールするように促されます。
+
+まずは、シンプルな分類器である決定木(decision tree)について見てみます。
+決定木とは以下の図（Wikipediaの[決定木のページ](https://ja.wikipedia.org/wiki/%E6%B1%BA%E5%AE%9A%E6%9C%A8)より）のような決定木を作成します。
+それぞれのノードでは変数の値によって分岐し、効率的に目的変数を分類していくことが目的です。
+
+![決定木](https://upload.wikimedia.org/wikipedia/ja/5/5d/Decision_tree_model_ja.png)
+
+`caret`では以下のように行います。
+
+- `rpart`とは決定木を求める方法の種類の一つ（らしい）です。
+
+```{r}
+vote_tree <- train(
+  target ~ .,
+  data = data_vote,
+  method = "rpart"
+)
+
+confusionMatrix(predict(vote_tree, data_vote), data_vote$target)
+```
+
+```{r}
+party_tree <- train(
+  target ~ .,
+  data = data_party,
+  method = "rpart"
+)
+
+confusionMatrix(predict(party_tree, data_party), data_party$target)
+```
+
+どちらもロジットよりも精度は高くないようです。
+
+## ランダムフォレスト {#RandomForest}
+
+ランダムフォレストとは決定木を複数作り（つまり、森を作り）、その多数決で最終的な予測を行う分類器です。
+
+```{r}
+vote_rf <- train(
+  target ~ .,
+  data = data_vote,
+  method = "rf"
+)
+
+confusionMatrix(predict(vote_rf, data_vote), data_vote$target)
+```
+
+```{r}
+party_rf <- train(
+  target ~ .,
+  data = data_party,
+  method = "rf"
+)
+
+confusionMatrix(predict(party_rf, data_party), data_party$target)
+```
+
+無事、どちらも正答率がほぼ100%を実現することができました。
+決定木を何本も生やしていくので、並列化を行わないとそこそこ時間がかかりますが、優秀な決定木のようです。
+
+- ランダムフォレストを更に改良したXGBoostというのが有能らしいです。
+
+残念ながら、ここにもからくりはあるのですが、ひとまず今回は様々な分類器を紹介することを目的に次に進みます。
+
+## SVM {#SVM}
+
+SVMも分類機の一つです。
+再びWikipediaのS[VMのページ](https://ja.wikipedia.org/wiki/%E3%82%B5%E3%83%9D%E3%83%BC%E3%83%88%E3%83%99%E3%82%AF%E3%82%BF%E3%83%BC%E3%83%9E%E3%82%B7%E3%83%B3)からの引用ですが、サポートベクターマシンとは右図のようにグループの間の境界線を見つける手法になります。
+
+![SVM](https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Kernel_Machine.svg/1200px-Kernel_Machine.svg.png)
+
+これだけでは至ってシンプルなのですが、SVMが有能である所以は、カーネルトリックを使うことで、左図のように曲がった境界線も見つけることができる点にあります。
+
+境界線を曲げるにはカーネル関数を選択する必要がありますが、ここでは（おそらく）一般的に使われているradial kernelを使います。
+
+- tree-basedじゃない場合は変数を正規化しておいた方がいいと言われています。
+
+```{r}
+vote_svm <- train(
+  target ~ .,
+  data = data_vote,
+  method = "svmRadial",
+  preProcess = c("center", "scale")
+)
+
+confusionMatrix(predict(vote_svm, data_vote), data_vote$target)
+```
+
+```{r}
+party_svm <- train(
+  target ~ .,
+  data = data_party,
+  method = "svmRadial",
+  preProcess = c("center", "scale")
+)
+
+confusionMatrix(predict(party_svm, data_party), data_party$target)
+```
+
+残念ながら（？）、今回は決定木と同じくらいの性能しか出ませんでした。
+
+## ニューラルネット {#NNet}
+
+最後に、ニューラルネットについて紹介します。
+ニューラルネットの話になるとしばしば右図のようなグラフを見るのですが（[Stack Overflowのとあるページ](https://stats.stackexchange.com/questions/366707/a-logistic-regression-with-neural-network-mindset-vs-a-shallow-neural-network)より）、これが何かを理解するために左図のロジットに戻ってみます。
+
+![ニューラルネット](https://i.stack.imgur.com/fKvva.png)
+
+左図のお気持ちとしては特徴量`input`をたくさん入れて（`+1`は切片のことです）、目的変数がとあるクラスに入る確率を求めているということです。
+右図では、入力層`Layer L1`と出力層`Layer L3`の間に中間層`Layer L2`が入っています。
+つまり、特徴量をそのまま分類器に突っ込むのではなく、中間層でゴニョゴニョしてから分類機に入れているのです。
+
+- 例えば交差項を入れる、多項式を入れるというのもゴニョゴニョの一種と考えることができます。
+
+ニューラルネットも`caret`で簡単に実装できます。
+
+```{r}
+vote_nnet <- train(
+  target ~ .,
+  data = data_vote,
+  method = "nnet",
+  preProcess = c("center", "scale"),
+  trace = FALSE
+)
+
+confusionMatrix(predict(vote_nnet, data_vote), data_vote$target)
+```
+
+```{r}
+party_nnet <- train(
+  target ~ .,
+  data = data_party,
+  method = "nnet",
+  preProcess = c("center", "scale"),
+  trace = FALSE
+)
+
+confusionMatrix(predict(party_nnet, data_party), data_party$target)
+```
+
+SVMと大体同じという感じでした。
+
+- ちなみに、いわゆるディープラーニングとは、ディープニューラルネット(DNN)と呼ばれるように、中間層を増やしていったニューラルネットになります。
+- Googleが開発したTensorFlowというディープラーニング用のフレームワークを使いやすくしたkerasというフレームワークをRから実行することができます（[TensorFlow for R](https://tensorflow.rstudio.com/)）を参照。

@@ -1,0 +1,114 @@
+---
+title: "データの可視化：回帰分析"
+description: |
+  Rで回帰分析の結果を可視化する方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - data visualization
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+Rで回帰分析を行い、その結果を報告する方法を説明します。
+主に、
+
+1. 表による報告
+1. 係数プロット（キャタピラ・プロット）
+
+について解説します。
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+library(broom)
+library(stargazer)
+library(texreg)
+```
+
+### データの読み込み
+
+[矢内先生](www.yukiyanai.com)の2016年衆院選の選挙結果のデータを使います。
+
+```{r}
+data <- read_csv("http://yukiyanai.github.io/jp/resources/data/hc2016-prefectures.csv", 
+                 locale = locale(encoding = "utf-8"))
+```
+
+### 回帰分析
+
+デモ用に適当に得票率をアウトカムに回帰分析を行います。
+
+```{r}
+model <- lm(voteshare ~ party + status, data = data)
+summary(model)
+```
+
+## 表による報告 {#Table}
+
+### broomの場合
+
+分析結果を`tidy()`に入れると分析結果をデータフレームにしてくれるので、それを`.csv`ファイルに保存することができます。
+
+```{r}
+tidy(model)
+```
+
+信頼区間をつけるには`conf.int = TRUE`にします。
+
+```{r}
+tidy(model, conf.int = TRUE)
+```
+
+- デフォルトでは95%信頼区間です。
+
+### stargazerの場合
+
+```{r}
+stargazer(model, type = "text")
+```
+
+### texregの場合
+
+`texreg`では`latex`コードを出力します。
+
+```{r}
+texreg(model)
+```
+
+## 係数プロットによる報告 {#CoefPlot}
+
+係数プロットの場合は`tidy()`でデータフレームを作って、`ggplot2`の`geom_pointrange()`を使うのが楽です。
+
+```{r}
+model %>% 
+  tidy(conf.int = TRUE) %>% 
+  filter(term != "(Intercept)") %>% 
+  ggplot() + 
+  geom_pointrange(aes(x = term, y = estimate, ymin = conf.low, ymax = conf.high)) + 
+  coord_flip()
+```
+
+- 切片を取り除いています。
+- `coord_flip()`で向きを90度変えています。

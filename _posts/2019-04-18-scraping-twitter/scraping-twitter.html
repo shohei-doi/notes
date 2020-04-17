@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+  <meta name="generator" content="distill" />
+
+  <style type="text/css">
+  /* Hide doc at startup (prevent jankiness while JS renders/transforms) */
+  body {
+    visibility: hidden;
+  }
+  </style>
+
+ <!--radix_placeholder_import_source-->
+ <!--/radix_placeholder_import_source-->
+
+  <!--radix_placeholder_meta_tags-->
+  <title>スクレイピング：Twitter編</title>
+  
+  <meta property="description" itemprop="description" content="RでAPI経由でTwitterのクローリング&amp;スクレイピングをする方法を説明します。"/>
+  
+  
+  <!--  https://schema.org/Article -->
+  <meta property="article:published" itemprop="datePublished" content="2019-05-09"/>
+  <meta property="article:created" itemprop="dateCreated" content="2019-05-09"/>
+  <meta name="article:author" content="土井　翔平"/>
+  
+  <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
+  <meta property="og:title" content="スクレイピング：Twitter編"/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:description" content="RでAPI経由でTwitterのクローリング&amp;スクレイピングをする方法を説明します。"/>
+  <meta property="og:locale" content="en_US"/>
+  
+  <!--  https://dev.twitter.com/cards/types/summary -->
+  <meta property="twitter:card" content="summary"/>
+  <meta property="twitter:title" content="スクレイピング：Twitter編"/>
+  <meta property="twitter:description" content="RでAPI経由でTwitterのクローリング&amp;スクレイピングをする方法を説明します。"/>
+  <meta property="twitter:creator" content="@sdoi0504"/>
+  
+  <!--/radix_placeholder_meta_tags-->
+  <!--radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-rmarkdown-metadata">
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","output","categories","twitter"]}},"value":[{"type":"character","attributes":{},"value":["スクレイピング：Twitter編"]},{"type":"character","attributes":{},"value":["RでAPI経由でTwitterのクローリング&スクレイピングをする方法を説明します。\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation"]}},"value":[{"type":"character","attributes":{},"value":["土井　翔平"]},{"type":"character","attributes":{},"value":["国立情報学研究所"]}]}]},{"type":"character","attributes":{},"value":["2019-05-09"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","toc_depth"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"integer","attributes":{},"value":[2]}]}]},{"type":"character","attributes":{},"value":["R","crawling/scraping"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["creator"]}},"value":[{"type":"character","attributes":{},"value":["@sdoi0504"]}]}]}
+  </script>
+  <!--/radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-resource-manifest">
+  {"type":"character","attributes":{},"value":["scraping-twitter_files/bowser-1.9.3/bowser.min.js","scraping-twitter_files/distill-2.2.21/template.v2.js","scraping-twitter_files/jquery-1.11.3/jquery.min.js","scraping-twitter_files/pagedtable-1.1/css/pagedtable.css","scraping-twitter_files/pagedtable-1.1/js/pagedtable.js","scraping-twitter_files/webcomponents-2.0.0/webcomponents.js"]}
+  </script>
+  <!--radix_placeholder_navigation_in_header-->
+  <!--/radix_placeholder_navigation_in_header-->
+  <!--radix_placeholder_distill-->
+  
+  <style type="text/css">
+  
+  body {
+    background-color: white;
+  }
+  
+  .pandoc-table {
+    width: 100%;
+  }
+  
+  .pandoc-table>caption {
+    margin-bottom: 10px;
+  }
+  
+  .pandoc-table th:not([align]) {
+    text-align: left;
+  }
+  
+  .pagedtable-footer {
+    font-size: 15px;
+  }
+  
+  .html-widget {
+    margin-bottom: 2.0em;
+  }
+  
+  .l-screen-inset {
+    padding-right: 16px;
+  }
+  
+  .l-screen .caption {
+    margin-left: 10px;
+  }
+  
+  .shaded {
+    background: rgb(247, 247, 247);
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .html-widget {
+    margin-bottom: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .shaded-content {
+    background: white;
+  }
+  
+  .text-output {
+    margin-top: 0;
+    line-height: 1.5em;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  d-article {
+    padding-bottom: 30px;
+  }
+  
+  d-appendix {
+    padding-top: 30px;
+  }
+  
+  d-article>p>img {
+    width: 100%;
+  }
+  
+  d-article iframe {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 2.0em;
+    width: 100%;
+  }
+  
+  figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  /* CSS for table of contents */
+  
+  .d-toc {
+    color: rgba(0,0,0,0.8);
+    font-size: 0.8em;
+    line-height: 1em;
+  }
+  
+  .d-toc-header {
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 1.3em;
+  }
+  
+  .d-toc a {
+    border-bottom: none;
+  }
+  
+  .d-toc ul {
+    padding-left: 0;
+  }
+  
+  .d-toc li>ul {
+    padding-top: 0.8em;
+    padding-left: 16px;
+    margin-bottom: 0.6em;
+  }
+  
+  .d-toc ul,
+  .d-toc li {
+    list-style-type: none;
+  }
+  
+  .d-toc li {
+    margin-bottom: 0.9em;
+  }
+  
+  .d-toc-separator {
+    margin-top: 20px;
+    margin-bottom: 2em;
+  }
+  
+  .d-article-with-toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  
+  
+  /* Tweak code blocks (note that this CSS is repeated above in an injection
+     into the d-code shadow dom) */
+  
+  d-code {
+    overflow-x: auto !important;
+  }
+  
+  pre.d-code code.d-code {
+    padding-left: 10px;
+    font-size: 12px;
+    border-left: 2px solid rgba(0,0,0,0.1);
+  }
+  
+  pre.text-output {
+  
+    font-size: 12px;
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  @media(min-width: 768px) {
+  
+  d-code {
+    overflow-x: visible !important;
+  }
+  
+  pre.d-code code.d-code  {
+      padding-left: 18px;
+      font-size: 14px;
+  }
+  pre.text-output {
+    font-size: 14px;
+  }
+  }
+  
+  /* Figure */
+  
+  .figure {
+    position: relative;
+    margin-bottom: 2.5em;
+    margin-top: 1.5em;
+  }
+  
+  .figure img {
+    width: 100%;
+  }
+  
+  .figure .caption {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    line-height: 1.5em;
+  }
+  
+  .figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  .figure .caption a {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .figure .caption b,
+  .figure .caption strong, {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 1.0);
+  }
+  
+  
+  
+  /* Tweak 1000px media break to show more text */
+  
+  @media(min-width: 1000px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 50px [text-start kicker-end] 65px 65px 65px 65px 65px 65px 65px 65px [text-end gutter-start] 65px [middle-end] 65px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 16px;
+    }
+  
+    .grid {
+      grid-column-gap: 16px;
+    }
+  
+    d-article {
+      font-size: 1.06rem;
+      line-height: 1.7em;
+    }
+    figure .caption, .figure .caption, figure figcaption {
+      font-size: 13px;
+    }
+  }
+  
+  @media(min-width: 1180px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 60px [middle-start] 60px [text-start kicker-end] 60px 60px 60px 60px 60px 60px 60px 60px [text-end gutter-start] 60px [middle-end] 60px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 32px;
+    }
+  
+    .grid {
+      grid-column-gap: 32px;
+    }
+  }
+  
+  
+  /* Get the citation styles for the appendix (not auto-injected on render since
+     we do our own rendering of the citation appendix) */
+  
+  d-appendix .citation-appendix,
+  .d-appendix .citation-appendix {
+    font-size: 11px;
+    line-height: 15px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    padding-left: 18px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 10px 18px;
+    border-radius: 3px;
+    color: rgba(150, 150, 150, 1);
+    overflow: hidden;
+    margin-top: -12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  
+  /* Social footer */
+  
+  .social_footer {
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.67);
+  }
+  
+  .disqus-comments {
+    margin-right: 30px;
+  }
+  
+  .disqus-comment-count {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+  
+  #disqus_thread {
+    margin-top: 30px;
+  }
+  
+  .article-sharing a {
+    border-bottom: none;
+    margin-right: 8px;
+  }
+  
+  .article-sharing a:hover {
+    border-bottom: none;
+  }
+  
+  .sidebar-section.subscribe {
+    font-size: 12px;
+    line-height: 1.6em;
+  }
+  
+  .subscribe p {
+    margin-bottom: 0.5em;
+  }
+  
+  
+  .article-footer .subscribe {
+    font-size: 15px;
+    margin-top: 45px;
+  }
+  
+  
+  /* Improve display for browsers without grid (IE/Edge <= 15) */
+  
+  .downlevel {
+    line-height: 1.6em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+  }
+  
+  .downlevel .d-title {
+    padding-top: 6rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .downlevel .d-title h1 {
+    font-size: 50px;
+    font-weight: 700;
+    line-height: 1.1em;
+    margin: 0 0 0.5rem;
+  }
+  
+  .downlevel .d-title p {
+    font-weight: 300;
+    font-size: 1.2rem;
+    line-height: 1.55em;
+    margin-top: 0;
+  }
+  
+  .downlevel .d-byline {
+    padding-top: 0.8em;
+    padding-bottom: 0.8em;
+    font-size: 0.8rem;
+    line-height: 1.8em;
+  }
+  
+  .downlevel .section-separator {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .downlevel .d-article {
+    font-size: 1.06rem;
+    line-height: 1.7em;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  
+  
+  .downlevel .d-appendix {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+    font-size: 0.8em;
+    line-height: 1.7em;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.5);
+    padding-top: 40px;
+    padding-bottom: 48px;
+  }
+  
+  .downlevel .footnotes ol {
+    padding-left: 13px;
+  }
+  
+  .downlevel .base-grid,
+  .downlevel .distill-header,
+  .downlevel .d-title,
+  .downlevel .d-abstract,
+  .downlevel .d-article,
+  .downlevel .d-appendix,
+  .downlevel .distill-appendix,
+  .downlevel .d-byline,
+  .downlevel .d-footnote-list,
+  .downlevel .d-citation-list,
+  .downlevel .distill-footer,
+  .downlevel .appendix-bottom,
+  .downlevel .posts-container {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  
+  @media(min-width: 768px) {
+    .downlevel .base-grid,
+    .downlevel .distill-header,
+    .downlevel .d-title,
+    .downlevel .d-abstract,
+    .downlevel .d-article,
+    .downlevel .d-appendix,
+    .downlevel .distill-appendix,
+    .downlevel .d-byline,
+    .downlevel .d-footnote-list,
+    .downlevel .d-citation-list,
+    .downlevel .distill-footer,
+    .downlevel .appendix-bottom,
+    .downlevel .posts-container {
+    padding-left: 150px;
+    padding-right: 150px;
+    max-width: 900px;
+  }
+  }
+  
+  .downlevel pre code {
+    display: block;
+    border-left: 2px solid rgba(0, 0, 0, .1);
+    padding: 0 0 0 20px;
+    font-size: 14px;
+  }
+  
+  .downlevel code, .downlevel pre {
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  </style>
+  
+  <script type="application/javascript">
+  
+  function is_downlevel_browser() {
+    if (bowser.isUnsupportedBrowser({ msie: "12", msedge: "16"},
+                                   window.navigator.userAgent)) {
+      return true;
+    } else {
+      return window.load_distill_framework === undefined;
+    }
+  }
+  
+  // show body when load is complete
+  function on_load_complete() {
+  
+    // set body to visible
+    document.body.style.visibility = 'visible';
+  
+    // force redraw for leaflet widgets
+    if (window.HTMLWidgets) {
+      var maps = window.HTMLWidgets.findAll(".leaflet");
+      $.each(maps, function(i, el) {
+        var map = this.getMap();
+        map.invalidateSize();
+        map.eachLayer(function(layer) {
+          if (layer instanceof L.TileLayer)
+            layer.redraw();
+        });
+      });
+    }
+  
+    // trigger 'shown' so htmlwidgets resize
+    $('d-article').trigger('shown');
+  }
+  
+  function init_distill() {
+  
+    init_common();
+  
+    // create front matter
+    var front_matter = $('<d-front-matter></d-front-matter>');
+    $('#distill-front-matter').wrap(front_matter);
+  
+    // create d-title
+    $('.d-title').changeElementType('d-title');
+  
+    // create d-byline
+    var byline = $('<d-byline></d-byline>');
+    $('.d-byline').replaceWith(byline);
+  
+    // create d-article
+    var article = $('<d-article></d-article>');
+    $('.d-article').wrap(article).children().unwrap();
+  
+    // move posts container into article
+    $('.posts-container').appendTo($('d-article'));
+  
+    // create d-appendix
+    $('.d-appendix').changeElementType('d-appendix');
+  
+    // create d-bibliography
+    var bibliography = $('<d-bibliography></d-bibliography>');
+    $('#distill-bibliography').wrap(bibliography);
+  
+    // flag indicating that we have appendix items
+    var appendix = $('.appendix-bottom').children('h3').length > 0;
+  
+    // replace citations with <d-cite>
+    $('.citation').each(function(i, val) {
+      appendix = true;
+      var cites = $(this).attr('data-cites').split(" ");
+      var dt_cite = $('<d-cite></d-cite>');
+      dt_cite.attr('key', cites.join());
+      $(this).replaceWith(dt_cite);
+    });
+    // remove refs
+    $('#refs').remove();
+  
+    // replace footnotes with <d-footnote>
+    $('.footnote-ref').each(function(i, val) {
+      appendix = true;
+      var href = $(this).attr('href');
+      var id = href.replace('#', '');
+      var fn = $('#' + id);
+      var fn_p = $('#' + id + '>p');
+      fn_p.find('.footnote-back').remove();
+      var text = fn_p.html();
+      var dtfn = $('<d-footnote></d-footnote>');
+      dtfn.html(text);
+      $(this).replaceWith(dtfn);
+    });
+    // remove footnotes
+    $('.footnotes').remove();
+  
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      var id = $(this).attr('id');
+      $('.d-toc a[href="#' + id + '"]').parent().remove();
+      appendix = true;
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('d-appendix'));
+    });
+  
+    // show d-appendix if we have appendix content
+    $("d-appendix").css('display', appendix ? 'grid' : 'none');
+  
+    // replace code blocks with d-code
+    $('pre>code').each(function(i, val) {
+      var code = $(this);
+      var pre = code.parent();
+      var clz = "";
+      var language = pre.attr('class');
+      if (language) {
+        // map unknown languages to "clike" (without this they just dissapear)
+        if ($.inArray(language, ["bash", "clike", "css", "go", "html",
+                                 "javascript", "js", "julia", "lua", "markdown",
+                                 "markup", "mathml", "python", "svg", "xml"]) == -1)
+          language = "clike";
+        language = ' language="' + language + '"';
+        var dt_code = $('<d-code block' + language + clz + '></d-code>');
+        dt_code.text(code.text());
+        pre.replaceWith(dt_code);
+      } else {
+        code.addClass('text-output').unwrap().changeElementType('pre');
+      }
+    });
+  
+    // localize layout chunks to just output
+    $('.layout-chunk').each(function(i, val) {
+  
+      // capture layout
+      var layout = $(this).attr('data-layout');
+  
+      // apply layout to markdown level block elements
+      var elements = $(this).children().not('d-code, pre.text-output, script');
+      elements.each(function(i, el) {
+        var layout_div = $('<div class="' + layout + '"></div>');
+        if (layout_div.hasClass('shaded')) {
+          var shaded_content = $('<div class="shaded-content"></div>');
+          $(this).wrap(shaded_content);
+          $(this).parent().wrap(layout_div);
+        } else {
+          $(this).wrap(layout_div);
+        }
+      });
+  
+  
+      // unwrap the layout-chunk div
+      $(this).children().unwrap();
+    });
+  
+    // load distill framework
+    load_distill_framework();
+  
+    // wait for window.distillRunlevel == 4 to do post processing
+    function distill_post_process() {
+  
+      if (!window.distillRunlevel || window.distillRunlevel < 4)
+        return;
+  
+      // hide author/affiliations entirely if we have no authors
+      var front_matter = JSON.parse($("#distill-front-matter").html());
+      var have_authors = front_matter.authors && front_matter.authors.length > 0;
+      if (!have_authors)
+        $('d-byline').addClass('hidden');
+  
+      // table of contents
+      if (have_authors) // adjust border if we are in authors
+        $('.d-toc').parent().addClass('d-article-with-toc');
+  
+      // strip links that point to #
+      $('.authors-affiliations').find('a[href="#"]').removeAttr('href');
+  
+      // hide elements of author/affiliations grid that have no value
+      function hide_byline_column(caption) {
+        $('d-byline').find('h3:contains("' + caption + '")').parent().css('visibility', 'hidden');
+      }
+  
+      // affiliations
+      var have_affiliations = false;
+      for (var i = 0; i<front_matter.authors.length; ++i) {
+        var author = front_matter.authors[i];
+        if (author.affiliation !== "&nbsp;") {
+          have_affiliations = true;
+          break;
+        }
+      }
+      if (!have_affiliations)
+        $('d-byline').find('h3:contains("Affiliations")').css('visibility', 'hidden');
+  
+      // published date
+      if (!front_matter.publishedDate)
+        hide_byline_column("Published");
+  
+      // document object identifier
+      var doi = $('d-byline').find('h3:contains("DOI")');
+      var doi_p = doi.next().empty();
+      if (!front_matter.doi) {
+        // if we have a citation and valid citationText then link to that
+        if ($('#citation').length > 0 && front_matter.citationText) {
+          doi.html('Citation');
+          $('<a href="#citation"></a>')
+            .text(front_matter.citationText)
+            .appendTo(doi_p);
+        } else {
+          hide_byline_column("DOI");
+        }
+      } else {
+        $('<a></a>')
+           .attr('href', "https://doi.org/" + front_matter.doi)
+           .html(front_matter.doi)
+           .appendTo(doi_p);
+      }
+  
+       // change plural form of authors/affiliations
+      if (front_matter.authors.length === 1) {
+        var grid = $('.authors-affiliations');
+        grid.children('h3:contains("Authors")').text('Author');
+        grid.children('h3:contains("Affiliations")').text('Affiliation');
+      }
+  
+      // inject pre code styles (can't do this with a global stylesheet b/c a shadow root is used)
+      $('d-code').each(function(i, val) {
+        var style = document.createElement('style');
+        style.innerHTML = 'pre code { padding-left: 10px; font-size: 12px; border-left: 2px solid rgba(0,0,0,0.1); } ' +
+                          '@media(min-width: 768px) { pre code { padding-left: 18px; font-size: 14px; } }';
+        if (this.shadowRoot)
+          this.shadowRoot.appendChild(style);
+      });
+  
+      // move appendix-bottom entries to the bottom
+      $('.appendix-bottom').appendTo('d-appendix').children().unwrap();
+      $('.appendix-bottom').remove();
+  
+      // clear polling timer
+      clearInterval(tid);
+  
+      // show body now that everything is ready
+      on_load_complete();
+    }
+  
+    var tid = setInterval(distill_post_process, 50);
+    distill_post_process();
+  
+  }
+  
+  function init_downlevel() {
+  
+    init_common();
+  
+     // insert hr after d-title
+    $('.d-title').after($('<hr class="section-separator"/>'));
+  
+    // check if we have authors
+    var front_matter = JSON.parse($("#distill-front-matter").html());
+    var have_authors = front_matter.authors && front_matter.authors.length > 0;
+  
+    // manage byline/border
+    if (!have_authors)
+      $('.d-byline').remove();
+    $('.d-byline').after($('<hr class="section-separator"/>'));
+    $('.d-byline a').remove();
+  
+    // remove toc
+    $('.d-toc-header').remove();
+    $('.d-toc').remove();
+    $('.d-toc-separator').remove();
+  
+    // move appendix elements
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('.d-appendix'));
+    });
+  
+  
+    // inject headers into references and footnotes
+    var refs_header = $('<h3></h3>');
+    refs_header.text('References');
+    $('#refs').prepend(refs_header);
+  
+    var footnotes_header = $('<h3></h3');
+    footnotes_header.text('Footnotes');
+    $('.footnotes').children('hr').first().replaceWith(footnotes_header);
+  
+    // move appendix-bottom entries to the bottom
+    $('.appendix-bottom').appendTo('.d-appendix').children().unwrap();
+    $('.appendix-bottom').remove();
+  
+    // remove appendix if it's empty
+    if ($('.d-appendix').children().length === 0)
+      $('.d-appendix').remove();
+  
+    // prepend separator above appendix
+    $('.d-appendix').before($('<hr class="section-separator" style="clear: both"/>'));
+  
+    // trim code
+    $('pre>code').each(function(i, val) {
+      $(this).html($.trim($(this).html()));
+    });
+  
+    // move posts-container right before article
+    $('.posts-container').insertBefore($('.d-article'));
+  
+    $('body').addClass('downlevel');
+  
+    on_load_complete();
+  }
+  
+  
+  function init_common() {
+  
+    // jquery plugin to change element types
+    (function($) {
+      $.fn.changeElementType = function(newType) {
+        var attrs = {};
+  
+        $.each(this[0].attributes, function(idx, attr) {
+          attrs[attr.nodeName] = attr.nodeValue;
+        });
+  
+        this.replaceWith(function() {
+          return $("<" + newType + "/>", attrs).append($(this).contents());
+        });
+      };
+    })(jQuery);
+  
+    // prevent underline for linked images
+    $('a > img').parent().css({'border-bottom' : 'none'});
+  
+    // mark non-body figures created by knitr chunks as 100% width
+    $('.layout-chunk').each(function(i, val) {
+      var figures = $(this).find('img, .html-widget');
+      if ($(this).attr('data-layout') !== "l-body") {
+        figures.css('width', '100%');
+      } else {
+        figures.css('max-width', '100%');
+        figures.filter("[width]").each(function(i, val) {
+          var fig = $(this);
+          fig.css('width', fig.attr('width') + 'px');
+        });
+  
+      }
+    });
+  
+    // auto-append index.html to post-preview links in file: protocol
+    // and in rstudio ide preview
+    $('.post-preview').each(function(i, val) {
+      if (window.location.protocol === "file:")
+        $(this).attr('href', $(this).attr('href') + "index.html");
+    });
+  
+    // get rid of index.html references in header
+    if (window.location.protocol !== "file:") {
+      $('.distill-site-header a[href]').each(function(i,val) {
+        $(this).attr('href', $(this).attr('href').replace("index.html", "./"));
+      });
+    }
+  
+    // add class to pandoc style tables
+    $('tr.header').parent('thead').parent('table').addClass('pandoc-table');
+    $('.kable-table').children('table').addClass('pandoc-table');
+  
+    // add figcaption style to table captions
+    $('caption').parent('table').addClass("figcaption");
+  
+    // initialize posts list
+    if (window.init_posts_list)
+      window.init_posts_list();
+  
+    // implmement disqus comment link
+    $('.disqus-comment-count').click(function() {
+      window.headroom_prevent_pin = true;
+      $('#disqus_thread').toggleClass('hidden');
+      if (!$('#disqus_thread').hasClass('hidden')) {
+        var offset = $(this).offset();
+        $(window).resize();
+        $('html, body').animate({
+          scrollTop: offset.top - 35
+        });
+      }
+    });
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    if (is_downlevel_browser())
+      init_downlevel();
+    else
+      window.addEventListener('WebComponentsReady', init_distill);
+  });
+  
+  </script>
+  
+  <!--/radix_placeholder_distill-->
+  <link href="scraping-twitter_files/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+  <script src="scraping-twitter_files/pagedtable-1.1/js/pagedtable.js"></script>
+  <script src="scraping-twitter_files/jquery-1.11.3/jquery.min.js"></script>
+  <script src="scraping-twitter_files/bowser-1.9.3/bowser.min.js"></script>
+  <script src="scraping-twitter_files/webcomponents-2.0.0/webcomponents.js"></script>
+  <script src="scraping-twitter_files/distill-2.2.21/template.v2.js"></script>
+  <!--radix_placeholder_site_in_header-->
+  <!--/radix_placeholder_site_in_header-->
+
+
+</head>
+
+<body>
+
+<!--radix_placeholder_front_matter-->
+
+<script id="distill-front-matter" type="text/json">
+{"title":"スクレイピング：Twitter編","description":"RでAPI経由でTwitterのクローリング&スクレイピングをする方法を説明します。","authors":[{"author":"土井　翔平","authorURL":"#","affiliation":"国立情報学研究所","affiliationURL":"#"}],"publishedDate":"2019-05-09T00:00:00.000+09:00","citationText":"翔平, 2019"}
+</script>
+
+<!--/radix_placeholder_front_matter-->
+<!--radix_placeholder_navigation_before_body-->
+<!--/radix_placeholder_navigation_before_body-->
+<!--radix_placeholder_site_before_body-->
+<!--/radix_placeholder_site_before_body-->
+
+<div class="d-title">
+<h1>スクレイピング：Twitter編</h1>
+<p>RでAPI経由でTwitterのクローリング&amp;スクレイピングをする方法を説明します。</p>
+</div>
+
+<div class="d-byline">
+  土井　翔平  (国立情報学研究所)
+  
+<br/>2019-05-09
+</div>
+
+<div class="d-article">
+<h3 class="d-toc-header">Table of Contents</h3>
+<nav class="d-toc" id="TOC">
+<ul>
+<li><a href="#Intro">はじめに</a></li>
+<li><a href="#Keyword">単語によるツイートの取得</a></li>
+<li><a href="#User">ユーザーによるツイートの取得</a></li>
+<li><a href="#Lang">言語によるツイートの取得</a></li>
+<li><a href="#Location">地域によるツイートの取得</a></li>
+<li><a href="#Live">ライブストリームの取得</a></li>
+<li><a href="#Others">その他の情報の取得</a></li>
+</ul>
+</nav>
+<hr class="d-toc-separator"/>
+<h2 id="Intro">はじめに</h2>
+<p>PCを使ってオンラインの情報を取得することをクローリング、そこから必要な情報を得ることをスクレイピングと呼びます（きっと）。 しかし、大抵の場合は両者は一緒に行われるので、断りがない限り合わせてスクレイピングと呼ぶこととします。</p>
+<p>API (Application Programming Interface) とはプログラミングによってアプリケーションを利用するための機能です。 いまいちよく分かりませんが、今回はTwitterのスクレイピングを例にAPIの使い方を紹介します。</p>
+<h3>パッケージの読み込み</h3>
+<p>とは言ってもRで直接APIを叩くのは大変なので、Rのパッケージを使いたいと思います。 RからTwitter APを叩くパッケージで有名なものには<code>rtweet</code>と<code>twitteR</code>があり違いはよく分かりませんが、今回は前者を使いたいと思います。</p>
+<aside>
+なぜかAPIは叩くものとされています。
+</aside>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(tidyverse)</code></pre>
+<pre><code>
+Registered S3 methods overwritten by &#39;ggplot2&#39;:
+  method         from 
+  [.quosures     rlang
+  c.quosures     rlang
+  print.quosures rlang</code></pre>
+<pre><code>
+Registered S3 method overwritten by &#39;rvest&#39;:
+  method            from
+  read_xml.response xml2</code></pre>
+<pre><code>
+── Attaching packages ────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──</code></pre>
+<pre><code>
+✔ ggplot2 3.1.1       ✔ purrr   0.3.2  
+✔ tibble  2.1.1       ✔ dplyr   0.8.0.1
+✔ tidyr   0.8.3       ✔ stringr 1.4.0  
+✔ readr   1.3.1       ✔ forcats 0.4.0  </code></pre>
+<pre><code>
+── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>
+library(rtweet)</code></pre>
+<pre><code>
+Attaching package: &#39;rtweet&#39;</code></pre>
+<pre><code>
+The following object is masked from &#39;package:purrr&#39;:
+
+    flatten</code></pre>
+<pre class="r"><code>
+library(rmarkdown)</code></pre>
+</div>
+<h3 id="twitter">Twitterアカウントの作成</h3>
+<p><a href="https://twitter.com/">Twitter</a>アカウントが必要なので作成します。</p>
+<h3>認証</h3>
+<p>実は、これまではAPIを使うためのアカウント認証がめんどくさかったのですが<code>rtweet</code>だと自動でやってくれるらしいです。 具体的には最初に<code>rtweet</code>の関数を使うと認証を求められるので、許可するだけです。</p>
+<aside>
+<a href="https://notchained.hatenablog.com/entry/2018/02/09/143304">こちら</a>を参照。
+</aside>
+<h2 id="Keyword">単語によるツイートの取得</h2>
+<p><code>serch_tweet()</code>で単語で検索してツイートをスクレイピングしてくれます。 今回は<code>けものフレンズ</code>で100件取得してみます。</p>
+<aside>
+一回につき最大で18000件まで取得できるそうです。
+</aside>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tweets &lt;- search_tweets(&quot;けものフレンズ&quot;, n = 100)</code></pre>
+<pre><code>
+Searching for tweets...</code></pre>
+<pre><code>
+Registered S3 method overwritten by &#39;openssl&#39;:
+  method      from
+  print.bytes Rcpp</code></pre>
+<pre><code>
+Finished collecting tweets!</code></pre>
+<pre class="r"><code>
+tweets %&gt;% 
+  select(text) %&gt;% 
+  paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["text"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"playストアでも完全勝利したけものフレンズ2 UC(1:01) https://t.co/BLNDByjLqj 草"},{"1":"けものフレンズ面白かったな〜特にかばんちゃんが親指立てながら溶鉱炉に沈んでいくシーンは涙無しには見られなかった"},{"1":"けものフレンズ2 https://t.co/Xk276sZAP5"},{"1":"5/26～6/1リリースの注目アルバム！\\nB'z、椎名林檎、布袋寅泰、けものフレンズ、井上苑子、山内惠介、Red Velvet、伊藤蘭、THE BAWDIES、HAN-KUN、SIRUP、ハルカトミユキ　など注目作続々！\\nhttps://t.co/cc8Nvk5hpI"},{"1":"「けものフレンズ」新声優ユニット“はなまるアニマル”＆“×ジャパリ団”発表！ 新作アニメ第3話も公開中 https://t.co/r5dHrdQdxr https://t.co/k0WqDpybTB"},{"1":"女優さんや声優さんは「売春婦」ではありませんよ。\\n本人同意でも法に触れます。\\nけものフレンズ２からテレ東の闇が明るみになっているのは周知の事実なのでこれ以上は触れません。\\nが、犯した罪は裁かれなければなりません。\\n法治国家なら尚更。"},{"1":"けもフレ２、ヒトから大なり小なり影響を受けた動物たちを出してるので、逆に（逆に？）徹頭徹尾ヒトの『愛』が造り出したであろうUMA系フレンズが出てくる話を見たかったなといま思った、というか初代アプリ版だと四神のフレンズとかいるのよね"},{"1":"けものフレンズR4コマ（4） https://t.co/7cHUQ3s6hd"},{"1":"けものフレンズR４コマ（３） https://t.co/ubOL3QSaOv"},{"1":"けものフレンズR4コマ（2） https://t.co/wxG56xlyrO"},{"1":"けものフレンズRありがとう！けものフレンズ　　　　Ｒ　　　　ありがとうううう描いたよううううううう！！！！！！！！！！！祝詞兄貴ありがとううううううううううう！！！！！！！！！！！！！！！！！！！！う、うわああああああああああああああああああああああああ（脳死）\\n#けものフレンズR https://t.co/RydPwQBSJa"},{"1":"けものフレンズR4コマ（1） https://t.co/FZH3YW55pA"},{"1":"かりごっこをするイエイヌちゃんとともえちゃん #けものフレンズR #呪詛から生まれた祝福の子 #イエイヌ(けものフレンズ) #ともえちゃん(けものフレンズ) #開拓者コンビ #ネガティブから生まれたポジティブ https://t.co/O35mqFMEGE https://t.co/7cuHsIFMY5"},{"1":"【MMDけもフレ】アムールトラ、イエイヌ、ともえで「スキスキ絶頂症」【けものフレンズR】を投稿しました🖖\\nYouTube→https://t.co/wVYvbeWEuy\\nニコニコ動画→https://t.co/he8FdeESG6\\n#イエイヌちゃんを救い隊 #けものフレンズ #けものフレンズ2 #けものフレンズR #ともえちゃん #アムールトラ https://t.co/DGDORpsilr"},{"1":"主要メンバーコンプリート！\\n＃けものフレンズR\\n＃ともえちゃん（けものフレンズ）\\n＃らきすたパロ https://t.co/G9DEOenyDx"},{"1":"たいせつなともだち\\n【MMDけもフレ】ともえちゃんで「劣等上等」【けものフレンズR】を投稿しました！本編Fullやお借りしたものは下記からURLから！\\nYouTube→https://t.co/ZSRVeEnIv9\\nニコニコ動画→https://t.co/TCtvQKJsH0\\n#けものフレンズR #ともえちゃん https://t.co/kB8GDUBzty"},{"1":"けものフレンズRより\\nともえちゃんとイエイヌちゃんの\\nナノブロック。\\n#ナノブロック\\n#けものフレンズ\\n#けものフレンズR\\n#平成最後のRTお願いします \\n#平成最後の作品 https://t.co/vyITvY6ser"},{"1":"けものフレンズRに希望あれ(｀･ω･´)ゞ\\n#けものフレンズ　#けものフレンズR https://t.co/sO7IObdfcs"},{"1":"まったく……寝ちょるときも騒がしい4人じゃけぇ\\n＃けものフレンズR\\n＃ともえちゃん（けものフレンズ）\\n＃イエイヌ（けものフレンズ）\\n＃アムールトラ（けものフレンズ）\\n＃アカイヌ（けものフレンズ） https://t.co/cQwfQMkzLJ"},{"1":"ふん……よう寝ちょるわい\\n＃けものフレンズR\\n＃ともえちゃん（けものフレンズ）\\n＃イエイヌ（けものフレンズ）\\n＃G・ロードランナー（けものフレンズ）\\n＃アカイヌ（けものフレンズ） https://t.co/9uj8XOOdwT"},{"1":"けものフレンズRより、ぱびりおん風ともえちゃんを…\\n\\nイエイヌに…ともえちゃんで笑顔を…\\n\\n#けものフレンズR https://t.co/r1wjDQ1rpy"},{"1":"けものフレンズRの絵\\n#けものフレンズR https://t.co/aIlY5pBN89"},{"1":"チュールで大人しくなるアムールトラちゃん描きました\\nいやーけものフレンズRの12話、ともえちゃんの差し出したチュールに\\nビースト化のワクチンが入ってるとはね～\\n#けものフレンズ2\\n#けものフレンズR https://t.co/eEoQ6xBOwj"},{"1":"あーもう可愛いんじゃぁ！\\n＃けものフレンズR\\n＃ともえちゃん（けものフレンズ）\\n＃イエイヌ（けものフレンズ）\\n＃イエイヌちゃんを救いたい https://t.co/fWM5M39kkJ"},{"1":"けものフレンズＲから、不規則な動きの蝶に戸惑うともえちゃんと\\n風に攫われたともえちゃんの大切な物を咄嗟にキャッチするイエイヌちゃん。\\n#けものフレンズR　#ともえちゃん https://t.co/luNLNEWWph"},{"1":"仲良し二人 #けものフレンズR #ともえちゃん(けものフレンズ) #イエイヌ(けものフレンズ) https://t.co/VGRniVwcBg https://t.co/gZNVFkRkV3"},{"1":"なかよし3人組(けものフレンズR)\\n\\n#けものフレンズR\\n#ともえちゃん https://t.co/jzNQ6Euems"},{"1":"アムールトラちゃんがかわいそすぎたので描いた。\\n#けものフレンズR #ともえちゃん ＃アムールトラ（けものフレンズ https://t.co/q6KDvJKp5Y"},{"1":"「あ、めっちゃ可愛い！」と思って3年ぶりに描いたmother風ドット絵『けものフレンズR ともえちゃん』\\n\\nイエイヌちゃんともどもまた描き直したい\\n\\n#ともえちゃん\\n#けものフレンズR https://t.co/vtfXhYfLrm"},{"1":"けものフレンズR イメージ #けものフレンズR #ともえちゃん(けものフレンズ) #イエイヌ(けものフレンズ) #G・ロードランナー(けものフレンズ) #アムールトラ(けものフレンズ) #ゴリラ(けものフレンズ) https://t.co/DLd5nOSjoO https://t.co/iij9evO34N"},{"1":"けものフレンズRのアムールトラちゃん救済イベ妄想の絵コンテです。当時は某アニメのせいで絵を描く気力が０に近かった。\\n(4/8)\\n#けものフレンズ \\n#けものフレンズR \\n＃ともえちゃん\\n＃イエイヌ\\n＃アムールトラ https://t.co/La5WEmpWLH"},{"1":"with boss #けものフレンズR #ともえちゃん(けものフレンズ) #イエイヌ(けものフレンズ) #ラッキービースト https://t.co/sSc0jv76wK https://t.co/fFMX60GnGk"},{"1":"たつき監督の愛は何度けものフレンズを、俺たちを救ってくれるんだ\\n#けものフレンズR\\n#ともえちゃん(けものフレンズ)\\n#イエイヌ(けものフレンズ)\\n#イエイヌちゃんを救い隊 \\n#赤犬 https://t.co/reMCnoT4WL"},{"1":"けものフレンズR　まとめ #けものフレンズR #イエイヌ(けものフレンズ) #ともえちゃん(けものフレンズ) https://t.co/D6ZHu3KnuW https://t.co/4cQJSdET3k"},{"1":"R（修正） #ともえちゃん(けものフレンズ) https://t.co/sA998fBm4k https://t.co/U1TcvNw3Jb"},{"1":"ともえちゃん #けものフレンズR #ともえちゃん(けものフレンズ) https://t.co/41jr1eZ8md https://t.co/A9HyG8IYXR"},{"1":"けもフレ3期｢けものフレンズR｣楽しみですね！！\\n#けものフレンズR #ともえちゃん #イエイヌちゃんを救い隊 #エイプリルフール https://t.co/wSkPC2Ohzt"},{"1":"「けものフレンズ」新声優ユニット“はなまるアニマル”＆“×ジャパリ団”発表！ 新作アニメ第3話も公開中 https://t.co/WNi46XbVg0"},{"1":"ところで「けものフレンズFESTIVAL」が本当に何の前触れもなく急に音沙汰が無くなり運用運営を放置するようになってから1ヶ月が経とうとしているのですが、内部で何かがあったのでしょうか。何かがあったに違いない。"},{"1":"「けものフレンズ」新声優ユニット“はなまるアニマル”＆“×ジャパリ団”発表！ 新作アニメ第3話も公開中 https://t.co/jDmxg8sY5h"},{"1":"「けものフレンズ」新声優ユニット“はなまるアニマル”＆“×ジャパリ団”発表！ 新作アニメ第3話も公開中 #アニメ https://t.co/JD5K7wCrWR"},{"1":"「けものフレンズ」新声優ユニット“はなまるアニマル”＆... - アニメ！アニメ！ https://t.co/UyBfjVmIlg #けもフレ #けものフレンズ\\nアニマネ -  https://t.co/OfdmSHWxti https://t.co/uNXpugQY3u"},{"1":"今回お勧めするのは今話題の人気アニメけものフレンズのキャラソングアルバム＋オリジナルサウンドトラックのセットCDです。こちら期間限定でオリジナルのCD収納ボックスも付いていてもし購入を検討されているならこの機会にぜひ。 https://t.co/IgdKiCRdIm"},{"1":"けものフレンズはいい。IQがモリモリ下がっていくわい！"},{"1":"@teno_minorin パッと見が何かに似てるなぁと思ったら｢けものフレンズ｣でした www https://t.co/jWETZjd8pq"},{"1":"加藤純一さんのお友達、オーイシさんの用語集④\\n\\n『Avgle』\\n\\n(※ゴールド認定されたけものフレンズＯＰ主題歌ようこそジャパリパークだが、それと同時にアダルト動画視聴サイトAvgleのＯＰでもある。)\\n\\n大石昌良大石おにいさん大石お兄さんオーイシマサヨシオーイシおにいさんオーイシお兄さんオオイシ"},{"1":"[定期]\\nGAME\\n　BLAZBLUE CENTRALFICTION\\nAnimation\\n　けものフレンズ\\n　リトルウイッチアカデミア\\nMusic\\n　初音ミク\\n\\nGAMEかアニメ女子力皆無の一応女子（＠・∀・）ﾏｲｯﾀｶ"},{"1":"けものフレンズ2 のキュルルちゃん(くん) です。 https://t.co/PEatSX7AA7"},{"1":"そもそも『け○のフレンズ』――：これも念のために伏字。――の制作側が初めからそれを狙って仕掛けたとかあるのかな？"},{"1":"ついにけものフレンズ２は見ずに終わった。\\n批判が多すぎて見る勇気がなかった。。。\\nだからケムリクサを見た！おもしろかったです！"},{"1":"けものフレンズなんだね！botがいつの間にか復活してて草"},{"1":"「けものフレンズ」１期と２期の物語構造の違いを真面目に考察してみた（２万文字記事）【物語論】 \\n\\nさっきＲＴしたやつだけどさぁ……\\nほんと容赦ねェし、深い考察の果てに提示された「次世代の物語の水準」は凄まじいですわ。これたぶん小説の類も同じ問題に突き当たる\\n\\nhttps://t.co/FTPdqQjdXr"},{"1":"@arai___araivul あらいさんちほー、りけーのフレンズもけっこういたのだ\\n\\nわかんないとこ聞いてみればいいのだ"},{"1":"ニコニコ超会議のお写真頂きました✨\\n\\nけものフレンズのマンモスちゃんやってました( *¯ ꒳¯*)𓃰\\nなかなかに暑かったです☀️😖☀️\\n\\n撮影：ユームの茹で卵さん(@game_paz_wiz )\\n\\n#ニコニコ超会議 \\n#けものフレンズ https://t.co/uXeow2okJ6"},{"1":"TVアニメ『けものフレンズ』ショートムービー　ヘラジカ篇 https://t.co/qRWhXDJZCK @YouTubeより"},{"1":"『けものフレンズ２』を見たら腹壊して不眠になって心療内科に行った人が現れる #けものフレンズ\\nhttps://t.co/q45aNEcdLN"},{"1":"週末の予定はお決まりですか？「けものフレンズ」の世界感が楽しめる屋形船はいかがですか？5/11(土) 12:00便/19:30便　5/12(日)12:00便/15:00便/19:30便の運行です🚢最終日はもしかしたらあの船長２人も！？ご予約は専用ダイヤル (0335225790)またはオンラインから！ #けものフレンズ屋形船 https://t.co/H1OHMYC1D7"},{"1":"けものフレンズ ロゴ アクリルキーホルダー を Amazon でチェック！ https://t.co/haZCkDeLRu"},{"1":"けものフレンズは純粋に作品が好きなんだけど、ケムリクサは「監督があんな目に遭わされてもめげずに完成させた」と言う状況に対する思い入れバイアスもあると思っている。好きなことは好きよ。"},{"1":"速報：けものフレンズ２にかばんちゃんが復活 https://t.co/VFXYarihTF"},{"1":"『けものフレンズ２』を見たら腹壊して不眠になって心療内科に行った人が現れる #けものフレンズ\\nhttps://t.co/q45aNEcdLN"},{"1":"【乃木坂46】「けものフレンズ2」のアニメ直前特番に琴子と絢音も少しだけ映った！ https://t.co/BPDrLVXyFq https://t.co/N94TrVnaLL"},{"1":"@a8p8p 2話に１回もおせっせしてるんです？！けものフレンズ笑いました友人に薦める時に言ってみますwwwwww"},{"1":"@tm0107_bari @at_plus_v0 この感覚でけものフレンズのアニメを1話まるっと(BGMから効果音、セリフまで全部)耳コピした動画があったんだけど消されてた しかも機械じゃなくて人間が耳コピしたやつ..... 万が一機会があったらぜひ聴いてほしい......."},{"1":"「悲報」 けものフレンズ信者いわくけものはいてものけものはいないと言っているが、これは間違い。何故ならたつき本人に音沙汰がないにもかかわらず角川を一方的に作中の悪役の名で呼び叩きを正当化している模様"},{"1":"（四択）アニメ『けものフレンズ』とのコラボとして、2017年に東武動物公園の園内アナウンスを担当した声優は？→×かばん役・内田彩"},{"1":"べつに…何でもいい。\\nけものフレンズ２はもういいんだ。"},{"1":"3DS(プチコン)でアプリ版けものフレンズの再現\\n#petitcom #けものフレンズ https://t.co/oW1a72Kw55"},{"1":"【けものフレンズ】おはなばたけ #けものフレンズ\\nhttps://t.co/loowjskaPN"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<p>いろいろありますが<code>text</code>変数にツイートがあることがわかります。</p>
+<h2 id="User">ユーザーによるツイートの取得</h2>
+<p><code>get_timelines()</code>では特定のユーザーのタイムラインを取得することができます。 例えば、ドナルド・トランプの<a href="https://twitter.com/realdonaldtrump">公式アカウント</a><code>@realDonaldTrump</code>のツイートを取得するにはこのようにします。</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tweets &lt;- get_timelines(&quot;realDonaldTrump&quot;, n = 100)
+tweets %&gt;% 
+  select(text) %&gt;% 
+  paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["text"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"After a great rally in Panama City Beach, Florida - I am returning to Washington, D.C. with @SenRickScott and Senator @MarcoRubio, discussing the terrible abuses by Maduro. America stands with the GREAT PEOPLE of Venezuela for however long it takes! https://t.co/KcBoNfEibv"},{"1":"MAKE AMERICA GREAT AGAIN! https://t.co/gOXXHnHHG5"},{"1":"Beautiful evening in Panama City Beach, Florida. Thank you! #MAGA\\nhttps://t.co/lNBM9sED2f"},{"1":"Big crowds in Panama City Beach, Florida. See everyone in 30 minutes! @FoxNews @TuckerCarlson @SeanHannity https://t.co/57tngL1W2i"},{"1":"Just landed in Panama City Beach, Florida for a rally beginning at 8:00 P.M. Eastern. Will be live on @FoxNews! #MAGA @tuckercarlson @seanhannity"},{"1":"Big announcement today: Drug companies have to come clean about their prices in TV ads. Historic transparency for American patients is here. If drug companies are ashamed of those prices—lower them!"},{"1":"“The reality is, with the Tariffs, the economy has grown more rapidly in the United States and much more slowly in China.” Peter Morici, Former Chief Economist, USITC"},{"1":"Getting ready to leave for one of my favorite places, the Florida Panhandle, where we’ve given, and are giving, billions of $$$ for the devastation caused by Hurricane Michael. Even though the Dems are totally in our way (they don’t want money to go there) we’re getting it done!"},{"1":"Thank you @NewtGingrich &amp; @FoxandFriends! https://t.co/GYJ7U2k7nn"},{"1":"Our Nation grieves at the unspeakable violence that took a precious young life and badly injured others in Colorado. God be with the families and thank you to the First Responders for bravely intervening. We are in close contact with Law Enforcement."},{"1":"Republicans shouldn’t vote for H.R. 312, a special interest casino Bill, backed by Elizabeth (Pocahontas) Warren. It is unfair and doesn’t treat Native Americans equally!"},{"1":"....in 3 separate locations, creating another 450 jobs. I have been working nicely with GM to get this done. Thank you to Mary B, your GREAT Governor, and Senator Rob Portman. With all the car companies coming back, and much more, THE USA IS BOOMING!"},{"1":"GREAT NEWS FOR OHIO! Just spoke to Mary Barra, CEO of General Motors, who informed me that, subject to a UAW agreement etc., GM will be selling their beautiful Lordstown Plant to Workhorse, where they plan to build Electric Trucks. GM will also be spending $700,000,000 in Ohio..."},{"1":"Real estate developers in the 1980’s &amp; 1990’s, more than 30 years ago, were entitled to massive write offs and depreciation which would, if one was actively building, show losses and tax losses in almost all cases. Much was non monetary. Sometimes considered “tax shelter,” ......"},{"1":"....you would get it by building, or even buying. You always wanted to show losses for tax purposes....almost all real estate developers did - and often re-negotiate with banks, it was sport. Additionally, the very old information put out is a highly inaccurate Fake News hit job!"},{"1":"“CASE CLOSED!” @SenateMajLDR \\nhttps://t.co/TOIatsmu4U"},{"1":"“This British Spy, Christopher Steele, tried so hard to get this (the Fake Dossier) out before the Election. Why?”  @kilmeade @foxandfriends"},{"1":"“Everyone wants to know who needs to be accountable, because it took up two years of our lives talking about this Russian involvement. It proved No Collusion, &amp; people want to trace it back to see how this all happened?” @ainsleyearhardt @foxandfriends  TREASONOUS HOAX!"},{"1":"Big Court win at our Southern Border! We are getting there - and Wall is being built!"},{"1":"“Shouldn’t 2015 and 2016 be revealed, how Intelligence Agencies, FBI, tried to sabotage a particular campaign - never been done before?” @SteveForbesCEO @MariaBartiromo"},{"1":"“The real “Obstruction of Justice” is what the Democrats are trying to do to this Attorney General.” Congressman Jim Jordan (R-Ohio). @MariaBartiromo"},{"1":"....Guess what, that’s not going to happen! China has just informed us that they (Vice-Premier) are now coming to the U.S. to make a deal. We’ll see, but I am very happy with over $100 Billion a year in Tariffs filling U.S. coffers...great for U.S., not good for China!"},{"1":"The reason for the China pullback &amp; attempted renegotiation of the Trade Deal is the sincere HOPE that they will be able to “negotiate” with Joe Biden or one of the very weak Democrats, and thereby continue to ripoff the United States (($500 Billion a year)) for years to come...."},{"1":"Democrats and Republicans should be working together to lower the cost of prescription drugs. \\n \\nWhat are Democrats doing instead? Holding the Attorney General in contempt for NOT breaking the law.\\n \\nIt's ABSURD. https://t.co/0WS5zuSfCs"},{"1":"Today, I led my Republican colleagues in asking for the #BornAliveAct to be taken up. Dem Leadership again denied our request to protect babies who are born alive after an attempted abortion… This bill is commonsense legislation. #ProLife #EndInfanticide #LetUsVote https://t.co/we8BCmh565"},{"1":"I am grateful to the millions of teachers who put their heart (and countless hours!) into their work. Thank you for your passionate dedication to improving the lives of your students! #TeacherAppreciationDay https://t.co/7uk33GX2jY"},{"1":"....you would get it by building, or even buying. You always wanted to show losses for tax purposes....almost all real estate developers did - and often re-negotiate with banks, it was sport. Additionally, the very old information put out is a highly inaccurate Fake News hit job!"},{"1":"Real estate developers in the 1980’s &amp; 1990’s, more than 30 years ago, were entitled to massive write offs and depreciation which would, if one was actively building, show losses and tax losses in almost all cases. Much was non monetary. Sometimes considered “tax shelter,” ......"},{"1":"“CASE CLOSED!” @SenateMajLDR \\nhttps://t.co/TOIatsmu4U"},{"1":"McConnell Backs Trump: Mueller Report Is 'Case Closed' | Breitbart https://t.co/eOWQSJX7lO via @BreitbartNews"},{"1":"LIVE NOW: President Trump Presents the Presidential Medal of Freedom to Tiger Woods https://t.co/tqZdiXay5T"},{"1":"Puerto Rico has been given more money by Congress for Hurricane Disaster Relief, 91 Billion Dollars, than any State in the history of the U.S. As an example, Florida got $12 Billion &amp; Texas $39 Billion for their monster hurricanes. Now the Democrats are saying NO Relief to......"},{"1":"....Alabama, Iowa, Nebraska, Georgia, South Carolina, North Carolina and others unless much more money is given to Puerto Rico. The Dems don’t want farmers to get any help. Puerto Rico should be very happy and the Dems should stop blocking much needed Disaster Relief!"},{"1":"I am pleased to inform you that THE BIG FIREWORKS, after many years of not having any, are coming back to beautiful Mount Rushmore in South Dakota. Great work @GovKristiNoem and @SecBernhardt! #MAGA"},{"1":"It’s an incredible privilege to be awarded the Presidential Medal of Freedom. Considering the recipients, history, and what this means to me and my family, it’s also very humbling. Thank you all for your support and I hope this inspires others to never give up on their dreams. https://t.co/33CJIHwQvz"},{"1":"Hillary Clinton is STILL claiming the election was “stolen” from her. \\n\\nIt wasn’t.\\n\\nShe had a failed message and completely wrote off states like mine.\\n\\n@realDonaldTrump showed up, has delivered big results as president, and he’s going to win again in 2020! https://t.co/8URPy6cbZe"},{"1":"BIG NEWS: Nearly HALF of @realdonaldtrump’s 2020 campaign contributions this year have come from WOMEN donors.\\n\\n#WomenForTrump #MAGA\\n\\nhttps://t.co/7a0fxC1T3D"},{"1":"President @realDonaldTrump is hard at work for the American people!\\n\\n#ThanksPresidentTrump #MAGA https://t.co/ehPs7iEn1u"},{"1":"Ever wonder why the Democrats are so obsessed with Russia? \\n \\nThey want to distract from how strong our economy is under @realDonaldTrump!\\nhttps://t.co/0I4LqnLuLS"},{"1":"He wants to impeach because they can’t win election. Sad! https://t.co/oFO6wMVhYt"},{"1":"'Forgotten Man' Story: Under Trump, Red Counties Economically Thrive https://t.co/eboFUSJH1u via @BreitbartNews"},{"1":"Congratulations @TigerWoods - you are truly one of a kind! https://t.co/B6YpeLZilo"},{"1":"On the one year anniversary of @FLOTUS' initiative, Be Best, take a look back at some of the highlights! #BeBest https://t.co/6oqylYZkDG"},{"1":"Democrats in Congress must vote to close the terrible loopholes at the Southern Border. If not, harsh measures will have to be taken!"},{"1":"Today, it was my true honor to present the Commander-in-Chief’s Trophy—for the second year in a row, to the @ArmyWP_Football Black Knights. Congratulations once again on your historic victories, and keep on making us proud! https://t.co/nGOC4PQn6S"},{"1":"Congratulations @ArmyWP_Football!\\nhttps://t.co/jzc35XNLl3"},{"1":"Just spoke to Prime Minister Abe of Japan concerning North Korea and Trade. Very good conversation!"},{"1":"....Alabama, Iowa, Nebraska, Georgia, South Carolina, North Carolina and others unless much more money is given to Puerto Rico. The Dems don’t want farmers to get any help. Puerto Rico should be very happy and the Dems should stop blocking much needed Disaster Relief!"},{"1":"Puerto Rico has been given more money by Congress for Hurricane Disaster Relief, 91 Billion Dollars, than any State in the history of the U.S. As an example, Florida got $12 Billion &amp; Texas $39 Billion for their monster hurricanes. Now the Democrats are saying NO Relief to......"},{"1":"Scott Walker is 100% correct when he says that the Republicans must WAKE UP to the Democrats State by State power grab. They play very dirty, actually, like never before. Don’t allow them to get away with what they are doing!"},{"1":"The United States has been losing, for many years, 600 to 800 Billion Dollars a year on Trade. With China we lose 500 Billion Dollars. Sorry, we’re not going to be doing that anymore!"},{"1":"Also, there are “No High Crimes &amp; Misdemeanors,” No Collusion, No Conspiracy, No Obstruction. ALL THE CRIMES ARE ON THE OTHER SIDE, and that’s what the Dems should be looking at, but they won’t. Nevertheless, the tables are turning!"},{"1":"“Democrat Texas Congressman Al Green says impeachment is the only thing that can prevent President Trump from re-election in 2020.” @OANN  In other words, Dems can’t win the election fairly. You can’t impeach a president for creating the best economy in our country’s history....."},{"1":".....The Witch Hunt is over but we will never forget. MAKE AMERICA GREAT AGAIN!"},{"1":"Despite the tremendous success that I have had as President, including perhaps the greatest ECONOMY and most successful first two years of any President in history, they have stolen two years of my (our) Presidency (Collusion Delusion) that we will never be able to get back....."},{"1":"....To the Gazan people — these terrorist acts against Israel will bring you nothing but more misery. END the violence and work towards peace - it can happen!"},{"1":"Once again, Israel faces a barrage of deadly rocket attacks by terrorist groups Hamas and Islamic Jihad. We support Israel 100% in its defense of its citizens...."},{"1":"Pending the confirmation of Mark Morgan as our Nation’s new ICE Director, Matt Albence will serve in the role of Acting Director. Matt is tough and dedicated and has my full support to deploy ICE to the maximum extent of the law! #MAGA"},{"1":"Our economy:\\n\\n*263,000 jobs in April, beating expectations.\\n\\n*5.4M jobs created since @realDonaldTrump took office.\\n\\n*Unemployment at 3.6%, the lowest since 1969.\\n\\n*Record low Hispanic unemployment\\n\\nDon’t let Democrats stop this progress!"},{"1":"After the best week ever for @realDonaldTrump - no obstruction, no collusion, NYT admits @BarackObama did spy on his campaign, &amp; the economy is soaring. I now support reparations-Trump should have 2 yrs added to his 1st term as pay back for time stolen by this corrupt failed coup"},{"1":"Excellent decision by @realDonaldTrump! No other president has had the guts to take on the China challenge.  #AmericaNowandForever https://t.co/0zdcuWH7sy"},{"1":"most important from @GeorgePapa19 interview @SundayFutures @FoxNews was the London Cntr for int'l law reached out to him on LinkedIn w job offer, suggesting entrapment from the start. Then before he resigns to work for @realDonaldTrump they say wait-1st, go to Rome &amp; meet Misfud"},{"1":"Comey’s FBI sent undercover agents to spy on @realDonaldTrump’s campaign.\\n\\nIt’s a stunning revelation of the lengths the Obama administration went.\\n\\nInstead of a phony Russia collusion investigation, we actually need to investigate how this whole hoax started."},{"1":"“This is not Congressional Oversight, this is bullying.” Jason Riley, The Wall Street Journal"},{"1":"“The Report sounded an awful lot as being Comeyesque, in other words, I’m not going to charge this person (there wasn’t even close to being a crime), but I’m going to criticize him on the way out the door. That’s unfortunate because it’s stepping outside of the role.” Robert Ray"},{"1":"....to testify. Are they looking for a redo because they hated seeing the strong NO COLLUSION conclusion? There was no crime, except on the other side (incredibly not covered in the Report), and NO OBSTRUCTION. Bob Mueller should not testify. No redos for the Dems!"},{"1":"After spending more than $35,000,000 over a two year period, interviewing 500 people, using 18 Trump Hating Angry Democrats &amp; 49 FBI Agents - all culminating in a more than 400 page Report showing NO COLLUSION - why would the Democrats in Congress now need Robert Mueller......."},{"1":"....of additional goods sent to us by China remain untaxed, but will be shortly, at a rate of 25%. The Tariffs paid to the USA have had little impact on product cost, mostly borne by China. The Trade Deal with China continues, but too slowly, as they attempt to renegotiate. No!"},{"1":"For 10 months, China has been paying Tariffs to the USA of 25% on 50 Billion Dollars of High Tech, and 10% on 200 Billion Dollars of other goods. These payments are partially responsible for our great economic results. The 10% will go up to 25% on Friday. 325 Billions Dollars...."},{"1":"The Kentucky Derby decision was not a good one. It was a rough &amp; tumble race on a wet and sloppy track, actually, a beautiful thing to watch. Only in these days of political correctness could such an overturn occur. The best horse did NOT win the Kentucky Derby - not even close!"},{"1":"I am pleased to inform all of those that believe in a strong, fair and sound Immigration Policy that Mark Morgan will be joining the Trump Administration as the head of our hard working men and women of ICE. Mark is a true believer and American Patriot. He will do a great job!"},{"1":"Hispanic Unemployment hit a record low today! \\nHere’s a clip of a big Special “AMericA” airing today \\nI chatted with a group of very engaged Latinas and Latinos at the North Lawn of The White House. \\nA must see show airing tonight on @BlazeTV https://t.co/lViB0Y7gcJ"},{"1":"Honored to be with these congregations. @POTUS &amp; I are with you. Our prayers are with you. Your resilience, your faith, and your courage in the wake of this unspeakable evil is an inspiration. Hate has no place in a house of worship. https://t.co/5VPMk9x5DA"},{"1":"Joined the pastors of  Mt Pleasant Baptist Church, St. Mary Baptist Church, &amp; Greater Union Baptist Church at what remains of Mt Pleasant after an arsonist set fire to these 3 churches. What happened here was evil, but these communities of faith overcame evil with good. https://t.co/koWAtd3usE"},{"1":"Judicial Watch announced it received 756 pages of newly uncovered emails that were among the materials former Secretary of State Hillary Clinton tried to delete or destroy, several of which were classified.\\n \\nhttps://t.co/INxKem5PLX"},{"1":"JW announced that a senior FBI official admitted, in writing and under oath, that the agency found Clinton email records in the Obama White House, specifically, the Executive Office of the President. \\n\\nhttps://t.co/W0YV9yQhYZ"},{"1":"Judicial Watch President @TomFitton breaks down a list of lawsuits that Judicial Watch has filed to get to the truth about the targeting of President @realDonaldTrump by the deep state.\\n\\nWatch full video here: https://t.co/eE36TluXpc"},{"1":".@realDonaldTrump retweeted our petition! Right now, our borders are being used as gateways for drug cartels &amp; violent criminals. That's why JW fights illegal immigration in the courts. Join our President &amp; sign the petition + help us win. 📋 https://t.co/L1a5ezhqMl"},{"1":"When you look at the continuous incorrect statements by Napolitano over the past 2 years, it is fair to ask FNC why they allow him to have national air time. The man has been significantly wrong on at least 8 major occasions. Unacceptable! Take him off the air!"},{"1":"Congratulations to @derekbrownutah on becoming Chairman of the @UtahGOP! Utah’s economy is on FIRE thanks to the leadership of @realDonaldTrump!"},{"1":"DOJ Asks Courts To Lighten Up On Qualcomm As It Battles China For 5G Supremacy https://t.co/6CEMpAwJZF"},{"1":"CNN’s Tapper: Is Trump Not Getting Enough Credit For The Economy? https://t.co/zTWeMmZKF8"},{"1":"Trump Cuts Off States From Skimming Medicaid Payments For Big Labor https://t.co/nWI8A8tomB"},{"1":"April Jobs Report: 263,000 Jobs Added, Unemployment At 3.6 Percent https://t.co/ham2RwREKA"},{"1":"Mike has been a fantastic Senator! https://t.co/WKSAfbeARz"},{"1":"How can it be possible that James Woods (and many others), a strong but responsible Conservative Voice, is banned from Twitter? Social Media &amp; Fake News Media, together with their partner, the Democrat Party, have no idea the problems they are causing for themselves. VERY UNFAIR!"},{"1":"Today, May 4th - is International Firefighters Day! We remember all of those who put their lives on the line to save others, and are grateful to those who continue to do so 24/7/365. We love our great firefighters, thank you! #ThankAFirefighter https://t.co/LBSfQRFZ7k"},{"1":"The last time the unemployment rate was this low we were about to land for the first time on the moon! \\n\\nHappy April #JobsReport and #NationalSpaceDay America! 🇺🇸 https://t.co/qGPa0MgRBt"},{"1":"@realDonaldTrump https://t.co/JE35yONsry"},{"1":"@realDonaldTrump With President Trump leading us, America is a BETTER and SAFER place🇺🇸"},{"1":"BOOM:\\n\\nDespite horrendous media treatment coverage Trump stands at 51% approval rating!\\n\\nThey tried to defame him\\n\\nThey tried to defeat him\\n\\nThey tried to displace him\\n\\nThey tried to overthrow him\\n\\nThey tried to remove him\\n\\nHe won\\n\\nWe won\\n\\nAmerica won\\n\\nWe will win again in 2020!"},{"1":"We're killing it on the economy! 🔥 https://t.co/hme0eihP9c"},{"1":"Very good call yesterday with President Putin of Russia. Tremendous potential for a good/great relationship with Russia, despite what you read and see in the Fake News Media. Look how they have misled you on “Russia Collusion.” The World can be a better and safer place. Nice!"},{"1":"Anything in this very interesting world is possible, but I believe that Kim Jong Un fully realizes the great economic potential of North Korea, &amp; will do nothing to interfere or end it. He also knows that I am with him &amp; does not want to break his promise to me. Deal will happen!"},{"1":"So great to watch this! https://t.co/pYoiLjM0pz"},{"1":"When will the Radical Left Wing Media apologize to me for knowingly getting the Russia Collusion Delusion story so wrong? The real story is about to happen! Why is @nytimes, @washingtonpost, @CNN, @MSNBC allowed to be on Twitter &amp; Facebook. Much of what they do is FAKE NEWS!"},{"1":"“Dangerous”.\\n\\nMy opinions?\\n\\nOr giving a handful of giant partisan corporations the power to decide who has free speech?\\n\\nYou decide.\\n\\nhttps://t.co/cTCoLs0Op2"},{"1":"So James Woods was kicked off Twitter for quoting Ralph Waldo Emerson...but @TalbertSwan the racist fake man of God, that’s SUPPOSED to be permanently banned for hate speech is back on? What have you to say @jack @Twitter ?\\n\\nhttps://t.co/SqXu8xWhQV"},{"1":"Lmao at establishment conservatives who think they won’t be labeled the new “dangerous” / “extremist” voices when those to the right of them are all banned. Good luck with that one guys 👌🏻"},{"1":"Those suggesting Facebook can ban anyone for any reason because they are a private company do not understand the platform/publisher distinction or the special legal protections afforded the former."}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<h2 id="Lang">言語によるツイートの取得</h2>
+<p>ツイ廃の間では周知の事実だとは思いますが、ツイッターの検索クエリは（例えば<a href="https://www.howtonote.jp/twitter/search/index2.html">このような</a>）オプションを付けることでより細かい指定をすることができます。 例えば、日本語のツイートのみを取得する場合は次のようにします。</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tweets &lt;- search_tweets(&quot;lang:jp&quot;, n = 100)</code></pre>
+<pre><code>
+Searching for tweets...</code></pre>
+<pre><code>
+Finished collecting tweets!</code></pre>
+<pre class="r"><code>
+tweets %&gt;% 
+  select(text) %&gt;% 
+  paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["text"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"今日の #いちか絵\\n\\n17Liveは【突撃みんなのごはん！】\\n手羽先50本の衝撃( Д )⊙ ⊙\\n\\nハチがアップグレードして吹き出し出るように⸜( ' ᵕ ' )⸝\\n出ないのもあったけど、まさか草とポンコツが出るとは🤣\\n\\nそして、明日はいよいよいちかの誕生日！\\n11:00と18:00の2回配信です！\\nhttps://t.co/Amug1uhLld https://t.co/3uhRpbjTI9"},{"1":"https://t.co/1fxnQO8pSO https://t.co/EvRhDrykXB"},{"1":"14時〜17時くらいの間で、以下のギャラリーをざっくりまわる予定なので、お暇な人はぜひどうぞ。\\n\\n表参道\\nhttps://t.co/eqcj41Gn1A\\n\\nhttps://t.co/wyMkWFDn4H\\n\\nhttps://t.co/YoXZrl1o6t\\n\\nhttps://t.co/1fxnQO8pSO\\n\\nhttps://t.co/QNRepp0H68\\n\\n外苑前\\nhttps://t.co/YTOvsclSmv"},{"1":"推しマークは→🎤🎸✨\\n\\n【小倉悠吾17(イチナナ)Live配信】\\n\\n次回配信85回目は5月9日日17:00〜\\n\\n通知設定をONにして引き続きチェックよろしくお願いします！\\n\\nアカウント→ @yugo_ogura\\n\\n＊17 Liveアプリをダウンロード&amp;フォローよろしくお願いします♪\\n\\nhttps://t.co/bmeoKKRJde"},{"1":"推しマークは→🎤🎸✨\\n\\n【小倉悠吾17(イチナナ)Live配信】\\n\\n次回配信85回目は5月9日日17:00〜\\n\\n通知設定をONにして引き続きチェックよろしくお願いします！\\n\\nアカウント→ @yugo_ogura\\n\\n＊17 Liveアプリをダウンロード&amp;フォローよろしくお願いします♪\\n\\nhttps://t.co/bmeoKKRJde"},{"1":"推しマークは→🎤🎸✨\\n\\n【小倉悠吾17(イチナナ)Live配信】\\n\\n次回配信85回目は5月9日日17:00〜\\n\\n通知設定をONにして引き続きチェックよろしくお願いします！\\n\\nアカウント→ @yugo_ogura\\n\\n＊17 Liveアプリをダウンロード&amp;フォローよろしくお願いします♪\\n\\nhttps://t.co/bmeoKKRJde"},{"1":"[海外通販 Old Navy] ワンピース、ジーンズ、T-シャツ、ショートパンツ最大50%オフ！キッズ&amp;ベビーファッションも最大50%オフ！ https://t.co/lpGK0FtmLp"},{"1":"[海外通販 Talbots] 期間限定！全トップス30%オフセール！新着もセール品も春夏フェミニントップス！ https://t.co/VBw4SkKjNg"},{"1":"[海外通販 American Eagle Outfitters] AEジーンズ＆ショートパンツが2点目半額に！T-シャツも2点目半額！ https://t.co/vIE0DGYrSx"},{"1":"[海外通販 Disney Store] アベンジャーズ・エンドゲームショップ！アクションフィギュア、Tシャツ、おもちゃなど115点！ https://t.co/J57oG1i2Vt"},{"1":"BiUP\\n\\nキャンペーン中！\\n\\n新規登録とキャンペーン参加でUPB、DACをGET！\\n\\nhttps://t.co/UgfE5XXiaf\\n\\n#暗号通貨"},{"1":"https://t.co/wJjJWJdbbI https://t.co/ublDxq7B6H"},{"1":"【5/8~5/15 期間限定キャンペーン】\\nhttps://t.co/xjI3bR7aRI\\n\\n対象のフレームと同時購入でレザインパーツがどれでも２点無料。\\n\\n対象のホイールと同時購入で\\nVITTORIAグラフェン2.0最新スペックタイヤ2点が0円。\\n\\nrGEAROOP製品orアイアンアーム製品と同時購入で通常3900円のVIP入会金が0円 https://t.co/R73H7aBxNn"},{"1":"【5/8~5/15 期間限定キャンペーン】\\nhttps://t.co/xjI3bR7aRI\\n\\n対象のフレームと同時購入でレザインパーツがどれでも２点無料。\\n\\n対象のホイールと同時購入で\\nVITTORIAグラフェン2.0最新スペックタイヤ2点が0円。\\n\\nrGEAROOP製品orアイアンアーム製品と同時購入で通常3900円のVIP入会金が0円 https://t.co/4yGczZVbWw"},{"1":"【5/8~5/15 期間限定キャンペーン】\\nhttps://t.co/xjI3bR7aRI\\n\\n対象のフレームと同時購入でレザインパーツがどれでも２点無料。\\n\\n対象のホイールと同時購入で\\nVITTORIAグラフェン2.0最新スペックタイヤ2点が0円。\\n\\nrGEAROOP製品orアイアンアーム製品と同時購入で通常3900円のVIP入会金が0円 https://t.co/K2Y9BYdEsd"},{"1":"【5/8~5/15 期間限定キャンペーン】\\n\\nGEAROOP製品orアイアンアーム製品と同時購入で通常3900円のVIP入会金が0円\\n\\nキャンペーンページはこちら\\nhttps://t.co/apLoVkl2dj https://t.co/v36VxqoXcs"},{"1":"#グウェント\\n神だった。なんでもあるわ\\nhttps://t.co/SG7d9qHllk"},{"1":"Bee 140 #cross_stitch charts\\n\\nContents\\n*Cover\\n*Main image for reference of embroidery\\n*Color list of DMC embroidery thread to use\\n*Monochrome cross stitch charts\\n\\nTotal 9-page PDF for download\\n¥1000\\nhttps://t.co/mWQHgHIi4U\\n\\nNo floss or fabric are incruded in this purchase. https://t.co/tCC8wA56A8"},{"1":"@fontanillaajeyp dasal lang JP! kakayanin!"},{"1":"☆17-live配信☆\\n望月海羽さんが、\\n普段の活動、宣伝、はなうたなど、\\n17-liveにて、随時配信しています。\\n火曜日14:00からは、ラジオ連動配信もしています。\\n是非、遊びに来て下さい。\\n望月海羽配信ページ：\\nhttps://t.co/zyr7KHZZba"},{"1":"☆17-live配信☆\\n望月海羽さんが、\\n普段の活動、宣伝、はなうたなど、\\n17-liveにて、随時配信しています。\\n火曜日14:00からは、ラジオ連動配信もしています。\\n是非、遊びに来て下さい。\\n望月海羽配信ページ：\\nhttps://t.co/zyr7KHZZba"},{"1":"☆17-live配信☆\\n望月海羽さんが、\\n普段の活動、宣伝、はなうたなど、\\n17-liveにて、随時配信しています。\\n火曜日14:00からは、ラジオ連動配信もしています。\\n是非、遊びに来て下さい。\\n望月海羽配信ページ：\\nhttps://t.co/zyr7KHZZba"},{"1":"☆17-live配信☆\\n望月海羽さんが、\\n普段の活動、宣伝、はなうたなど、\\n17-liveにて、随時配信しています。\\n火曜日14:00からは、ラジオ連動配信もしています。\\n是非、遊びに来て下さい。\\n望月海羽配信ページ：\\nhttps://t.co/zyr7KHZZba"},{"1":"クリックしてUPBをもらう https://t.co/aKoAtB90r6 https://t.co/FqmyBtJk8c"},{"1":"クリックしてUPBをもらう https://t.co/aKoAtB90r6 https://t.co/be900LSNhD"},{"1":"🔥🔥ICBWalletの期待度は変わりませんが荒稼ぎするならNBYTokenが伸びそうです🔥🔥\\n\\n月利8%〜20%\\n\\n$500〜\\n\\n登録⬇️\\nhttps://t.co/CqxrdbiQ7y\\n\\n☄️詳細が気になる方はお問い合わせ下さい☄️\\n\\n🔥まだ日本ではやってません🔥"},{"1":"17ライブを利用しています。ダウンロードしてkinochan_da の写真、動画、ライブ配信をフォローしよう！\\n今日何した？^_^\\nhttps://t.co/LX7i4zTLkW https://t.co/pZ9pXMxcph"},{"1":"こちらが問題のURLです\\nhttps://t.co/nV4xK6lc9s"},{"1":"17 Liveで私の生配信を見よう！\\n澪 LIVE\\nhttps://t.co/tixrKL79J7 https://t.co/6CsmOsYl6c"},{"1":"https://t.co/GksAO8B9sH"},{"1":"クリックでUPBをもらおうhttps://t.co/LcXzeZ8Xt1"},{"1":"クリックでUPBをもらおうhttps://t.co/hPSXmP7RJv"},{"1":"@dejimacom その…イラストはとても綺麗なんですが…\\nhttps://t.co/yKdRhvwRcq"},{"1":"17ライブを利用しています。ダウンロードしてASUKA🌹🐣飛鳥トリ の写真、動画、ライブ配信をフォローしよう！\\nコスプレ💗あんたバカァ？ᐠ( ᐛ )ᐟᐠ( ᐖ )ᐟ\\nhttps://t.co/U2XjSVASmG https://t.co/QHcyOIFEUu"},{"1":"BiUPってところのログインキャンペーンが割といい感じにもらえてる。4500円分。まだ換金はできないけど更新頻度高いしチャイナだし将来性ありかなとみる。\\nhttps://t.co/YuuKNyl9xi\\n\\n#airdrop #エアドロップ #仮想通貨 https://t.co/VHcZy9F17G"},{"1":"クリックしてUPBをもらう https://t.co/rPemLRQPqs https://t.co/I693LKZUb5"},{"1":"クリックしてUPBをもらう https://t.co/rPemLRQPqs https://t.co/Gb9SJSj4Fe"},{"1":"クリックしてUPBをもらう https://t.co/JIyb6Kn4jj https://t.co/AwIV7NqZbA"},{"1":"@Flesvelka_haku FF外失礼します\\nFor other questions, youcan take a look this wiki\\nhttps://t.co/i7OyhpsNpU https://t.co/eqPdRXqA9t"},{"1":"すこし配信します\\nhttps://t.co/4ZDk16dtf7"},{"1":"【配信告知】\\n本日の配信は21時30頃〜24時頃までやります🎸🐈\\nhttps://t.co/JjzRXRDUax\\n#17live"},{"1":"17 Liveで楽しいライブ配信を見つけたよ！遊びに行こう！chikaのお誕生日会\\nhttps://t.co/bIlkGoe9mq"},{"1":"すこし配信します\\nhttps://t.co/4ZDk16dtf7"},{"1":"17ライブを利用しています。ダウンロードしてYuri1001 の写真、動画、ライブ配信をフォローしよう！\\n初見さんもお気楽に😉💕\\nhttps://t.co/oG0T3U1CRi https://t.co/kI39eM1sPm"},{"1":"今日も一日お疲れ様でした💙\\n凄く微妙ですがギリギリ間に合いそうにないため\\n配信は21:00〜 行います！\\n\\nみなさまお待ちしております🙇‍♂️💙\\n\\nhttps://t.co/23uKC1Z8mV"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"本日19:35〜ライブ配信する予定です！\\n→https://t.co/VdEzyl3Udq"},{"1":"@_yukarinSA 今回とらのあなさんに委託しておりますので、転送サービスを活用することで海外にもお届けできるかと思います。よければご利用下さい´`*\\n\\n【とらのあな作品ページ】\\nhttps://t.co/RjD41u8vcq\\n\\n【海外転送サービス】\\n▼AOCS\\nhttps://t.co/6B1YdTstpW\\n▼転送コム\\nhttps://t.co/cgAVRAafVT"},{"1":"本日19:35〜ライブ配信する予定です！\\n→https://t.co/VdEzyl3Udq"},{"1":"本日19:35〜ライブ配信する予定です！\\n→https://t.co/VdEzyl3Udq"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【買取情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》イラストの限定スリーブをただいま🔥1500円🔥で買取中💰\\n全国の晴れる屋店頭の他、各種手数料無料・送るだけで簡単な「ネット買取」でも同額で買取を行っております！\\n不要な方は晴れる屋までお売りください！→https://t.co/u1QIthTnZ7 https://t.co/gYZI0kWXZO"},{"1":"花森さん考案の「直線裁ちの洋服」だって、新しい服も布も何にも無い時代に、古くなった着物を解いて、仕立て直した「更生服」からの流れ。ナレは、こういう事、言ってよ。\\n#とと姉ちゃん反省会\\nhttps://t.co/MXGwwXyCFE\\nhttps://t.co/4LkBoHk1Ua"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"@xyz029029 モノリスと揺籃の地はいい小遣いになりますよ https://t.co/v7sRyvPdHP  https://t.co/pHhJ7N79n7"},{"1":"クリックしてUPBをもらう https://t.co/Rz1pWqGv3T https://t.co/5YYVPvuRkc"},{"1":"BiUP-取引所横断でトレードできる \\n https://t.co/Rz1pWqGv3T"},{"1":"クリックしてUPBをもらう https://t.co/5PPkxhzy0r https://t.co/FZak6TwogH"},{"1":"おはまい！無事起きた！🙋\\n今朝の配信はじめまーす！\\n\\n舞ちゃん.KusKus #17live #イチナナ \\n\\n＼今日も舞ちゃん次第／\\nhttps://t.co/0bYB3S5GVu\\n\\n#KusKus #飯塚舞 #舞ちゃん次第"},{"1":"さて！今日の配信はじめまーす！\\n\\n舞ちゃん.KusKus #17live #イチナナ \\n\\n＼今日も舞ちゃん次第／\\nhttps://t.co/0bYB3S5GVu\\n\\n#KusKus #飯塚舞 #舞ちゃん次第"},{"1":"失われてしまった九龍城を探検できる無料ツール。\\n失われてしまった九龍城を\\nデジタルで保管しているツールです。 https://t.co/ZzEgCb37sa"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"@masterq_mogumog https://t.co/g5XST1NnPJ\\n\\nportsという仕組みでやります。ボイラープレートが増えるぐらいの認識で問題ありません。\\n\\nちなみにelmに限らずjqueryのようなDOMを直接書き換えるライブラリは現在推奨されていません"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"●2019年1月6日(日)より、毎週日曜日23時～\\n17(イチナナ)live動画配信スタート‼️\\nアカウントURLはこちら\\n https://t.co/XVrdqLeEzz"},{"1":"17 Liveで私の生配信を見よう！\\n澪 LIVE\\nhttps://t.co/tixrKL79J7 https://t.co/6CsmOsYl6c"},{"1":"17 Liveで私の生配信を見よう！\\n澪 LIVE\\nhttps://t.co/tixrKL79J7 https://t.co/6CsmOsYl6c"},{"1":"よく国内で使う航空会社。大丈夫かいな。\\n\\n2014年にはインドの格安航空会社（LCC）大手スパイスジェットSG-622便が、同国西部にある空港の滑走路で1頭のバッファローと衝突。操縦士は直前で離陸を断念するはめになった。\\nhttps://t.co/3peHoRfjG0"},{"1":"https://t.co/yppZ1thfaQ\\nこの問題かなり好き、見た目やばそうだったけどあることに注目すると一気に解けて爽快"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【買取情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》イラストの限定スリーブをただいま🔥1500円🔥で買取中💰\\n全国の晴れる屋店頭の他、各種手数料無料・送るだけで簡単な「ネット買取」でも同額で買取を行っております！\\n不要な方は晴れる屋までお売りください！→https://t.co/u1QIthTnZ7 https://t.co/gYZI0kWXZO"},{"1":"さて！今日の配信はじめまーす！\\n\\n舞ちゃん.KusKus #17live #イチナナ \\n\\n＼今日も舞ちゃん次第／\\nhttps://t.co/0bYB3S5GVu\\n\\n#KusKus #飯塚舞 #舞ちゃん次第"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"},{"1":"【商品情報】天野喜孝さんが描いた《戦慄衆の将軍、リリアナ》限定スリーブの販売を開始しました！妖しくも美しい超美麗イラスト！お求めはこちらから→https://t.co/lnjcbSXaxX https://t.co/NiuQ4icTuG"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<h2 id="Location">地域によるツイートの取得</h2>
+<p>特定の地域でつぶやかれたツイートのみを取得することもできます。</p>
+<p>そのためには東京の地理情報を得るためにGoogle MapsのAPIに登録する必要があります。 まずは、<a href="https://cloud.google.com/maps-platform/">Google Maps Platform</a>に行き、登録します。 クレジットカード情報を入力しますが、一年間は無料で使え、期限後に自動請求されることは無いはずです。</p>
+<p>登録を完了すると<a href="https://console.cloud.google.com">Google Cloud Platform</a>の<code>APIとサービス</code>内の<code>認証情報</code>に<code>API key</code>が表示されているので、それをコピペして例えば<code>apikey</code>のようなオブジェクトにします。</p>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<p>例えば、京都でつぶやかれたツイートのみを取得する場合は次のようにします。</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tweets &lt;- search_tweets(&quot;&quot;, geocode = lookup_coords(&quot;kyoto, jp&quot;, apikey = apikey), n = 100)</code></pre>
+<pre><code>
+Searching for tweets...</code></pre>
+<pre><code>
+Finished collecting tweets!</code></pre>
+<pre class="r"><code>
+tweets %&gt;% 
+  select(text) %&gt;% 
+  paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["text"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"@alqwim_186 いや別に困らんよ笑 近くにスーパーもコンビニもあるし電車も10分に1本はくるし笑"},{"1":"@kuma_power70 バツグン"},{"1":"#tomyumsoup #foodpic #food #thaifood https://t.co/D4m838QF95 https://t.co/QBxTxanxUm"},{"1":"I'm at 喜多方ラーメン 坂内食堂 京都拉麺小路店 in Kyoto, 京都府 https://t.co/7Bl3Xh7wQD"},{"1":"なんやかんや、匿名でのやり取りを希望される方にはメルカリも重宝している現在……。\\n\\nよろしければどうぞ〜\\nTwitterのDMでも鑑定してます〜\\n\\nフリマアプリ「メルカリ」で販売してます  https://t.co/FWuhild6rD"},{"1":"アビリティホームは新築一戸建専門店です。だから\\n住宅ローンの金利や物件価格も特別に御提案できます。"},{"1":"かなしい"},{"1":"自転車倒してしまってカゴが変形しちゃった\\nわーん https://t.co/JoGQv4eGif"},{"1":"来たる5/12(日) ジャングルハンター京セラドーム 9番ブースにて皆様のお越しをお待ちしております。 https://t.co/lI909Q0KMq"},{"1":"@okamoto_yumiko 良い子は寝る時間ナリ"},{"1":"@yunatoro1141 尊敬するナリ🙆‍♂️"},{"1":"そもそもどうやったら動いてすらない歩行者に過失があるというような発想が出てくんのか本当に謎よね"},{"1":"@rizeshiro 太鼓は比較的単純な分速さとかしんどさがやばいからなぁ……マジで腕破壊されるし\\n正直にちゃんと埋めてたらそろそろ13やろうとか思う頃にはそれなりに体力あるやろうしその方がいいやろ"},{"1":"かまってシャムちゃん\\n「一番好き？」\\n\\nシャムちゃんシリーズ スタンプ販売中\\nhttps://t.co/0Urq9yjDJq https://t.co/B2Nlh4yLWU"},{"1":"18時くらいから外回りの仕事が入らないかナァ……最悪19時からでも良いので……"},{"1":"今月のお楽しみですよ…… https://t.co/t64P5LLcUk https://t.co/PF1mFUATDm"},{"1":"@hayachanyoutube ふぁるこリッチが 1Pにしてくれたから うぴちゃんもあたしも買えました(∩´∀`∩)💕"},{"1":"@SDBH__JACK @shin_SDBH_shin @yukidon1308 (；＿；)"},{"1":"@show_dec29 (´^ω^｀)ﾌﾞﾌｫwww\\nあの、なんだっけ、スイッチステップチャージパリキャン？wも可能性ありそう( ˙꒳​˙  )"},{"1":"NMAX欲しい"},{"1":"まるるんって消えてしまったんかなぁ…😔  強弁やけど可愛げあって好きやったのに…"},{"1":"かまってシャムちゃん\\n「一番好き？」\\n\\nシャムちゃんシリーズ スタンプ販売中\\nhttps://t.co/0Urq9yjDJq https://t.co/B2Nlh4yLWU"},{"1":"終わり良ければすべて良し。　ウィリアム・シェイクスピア　⇒　https://t.co/2RH25Rbeps"},{"1":"@Paillettes77 確かにw蘭姉ちゃんは今年も強かったです…( ˘ω˘ ) ｽﾔｧ…"},{"1":"壁が・・\\n\\n壁が・・\\n食べられてます・・\\n\\n相葉雅紀/"},{"1":"最近自撮り載せる率たかめヽ(ﾟ∀｡)ﾉ https://t.co/IlIIQJP9NU"},{"1":"I'm at JR Uji Station in 宇治市, 京都府 https://t.co/fvixDESBBz"},{"1":"これで昨日、ヘリコプターがうるさかったんかな？\\n\\n京都タワーに爆破予告　容疑の女逮捕「気分落ち込んで」：朝日新聞デジタル https://t.co/ZUdhFkCu4k"},{"1":"しかしこれに似たようなことはできます。"},{"1":"@Nekomusume_5th 木曜日ですね！Happy Thursday"},{"1":"GW中に、ヤフオクで手頃な価格で落札したドラレコの中古品は、商品説明文にない、リア用カメラも付属していて非常にお買い得だった。\\n\\nよく見たら写真に映っていたが、現物が届くまで、それがリアカメラだとは分からなかった。"},{"1":"@anzu_chaaaan 待ってる"},{"1":"開示やっと届きました。\\n理学部じゃない受かり方。\\n#京大開示祭り2019 \\n#2019京大開示祭り https://t.co/ivb9tgVOw8"},{"1":"依存性です🍜🧟バリ美味い🤩 https://t.co/0ezpgb74WC"},{"1":"一応プロドライバーなんで。\\n\\n事故を軽減するには『待つ、譲る』を徹底したら良いよ。\\n車線変更や走行車線へは抜かすんじゃなくて必ず待ってから入る。\\n交差点の右折もそう。\\nいけるかな、と少しでも思うなら行かない。\\n\\nこっちが優先！\\n俺は悪くない！\\n\\nは関係無いの。\\n\\n『事故れば終わり』\\n\\nやねん。"},{"1":"@natukasii_sekai 神ゲーじゃんかw"},{"1":"新曲どっちも12＋みたいですねー https://t.co/xMXOOxc66x"},{"1":"花と昆虫 https://t.co/kIlJNpcPJN"},{"1":"花と昆虫 https://t.co/zBr1zZQYMp"},{"1":"에도시대 그림들 보고있으면 진짜 정신분열 올거같어"},{"1":"いつものホテルでいつもの朝ごはん。ここにいる間が一年で一番健康的な生活をしている気がします。オスターでもないのにオスターハーゼのパンがあったから今日は良い日🐇これから倉庫です。(多分外より寒い) https://t.co/2xA8u1MvMj"},{"1":"@black_pressure ここの大好物"},{"1":"@ai54084938 今日もよろしくです🐶"},{"1":"たった今確認して間違ってなかったです！\\nでもツイ消しなんてしません！！おこ"},{"1":"@taimatu9 鈴木教祖様のトレーニングで社員、オーナー話を「お客様が喜んでくれたら」を植え付けますが、そんなの気にしてるうちはもう商売でなくボランティアになってしまいます\\n\\n「もう来ない」と言われたら私なら「どうぞ」ですね\\n\\nそれと近隣の店の事なんて気しません。自分の店の自分の利益、経費ですから。"},{"1":"手つけれてない任務消化始めているけど、この編成のレベル差に笑えてくる...敷波... https://t.co/T7lNZbtsAw"},{"1":"かまってシャムちゃん\\n「一番好き？」\\n\\nシャムちゃんシリーズ スタンプ販売中\\nhttps://t.co/0Urq9yjDJq https://t.co/B2Nlh4yLWU"},{"1":"側面 https://t.co/zxznRpMOt9"},{"1":"@yu_kayu_ka41 聞く聞く😢そうなるよな〜昔の俺もそうやったから分かるよ😢"},{"1":"■第8回全世界空手道選手権大会チャンピオンの鈴木師範が出演なさっているようです。\\n\\n鈴木師範は今病気と戦われています。\\n\\n撮影は発病前の時期です。\\n\\n鈴木師範の回復を願う応援の気持ちを込めて拝見したいと思います。\\n\\n皆様もぜひご覧ください！\\nhttps://t.co/1y6rEuEkXV"},{"1":"「夏の貴船が美しい」 https://t.co/ogu5JS3T8Y"},{"1":"つかれたしねるか"},{"1":"@mikihouse_cart 行きますよ😆👍✨"},{"1":"夏目と薫欲しい＼(^^)／"},{"1":"ツイッターランド名物の自分からフォローせがんでおきながらなんでフォローすんねんって言い出す構ってちゃんムーブ超面白いよな"},{"1":"米国でアマゾンが2018年に払った所得税はゼロ。逆に1億2900万ドルもの税還付\\n日本でも国内初の年間利益２兆円を達成したトヨタは2009～2013年の5年間納税額はゼロ\\n派遣切りで自殺者を出し、生活保護世帯から消費税をむしり取りながら行われてきたことがこれだ\\n https://t.co/QeEyckLZYc"},{"1":"@saya_cherry17 そうなの？！めっちゃいい曲多そうやし色々きいてみよとおもって！"},{"1":"リンクをクリックして、クラッシュ・ロワイヤルで私のクランに参加してください！ https://t.co/8e8a5FJl28"},{"1":"マイペーーーース過ぎやな(^q^)"},{"1":"@cyber_DEN2 これからはラヲタではなく王子として頑張ります。"},{"1":"@sinbouzu ありがとうございます。"},{"1":"不定期フォロワーさん探訪一日目https://t.co/5VGzLSR1Js\\nイルサローネ茨木店の巻\\nご意見、ご感想をお待ちしております。"},{"1":"@runkunsandayo 自分で言うのもアレやけど拡散の仕方上手くなったくない？"},{"1":"@benta73493658 @runkunsandayo 大丈夫ですよ\\n((꜆꜄ ˙꒳˙)꜆꜄꜆ﾖｷﾖｷﾖｷﾖｷﾖｷﾖｷﾖｷﾖｷﾖｷﾖｷ"},{"1":"ラボin"},{"1":"@rap_njs だから、敢えて報道陣の前では無愛想な顔しながら、献花台に向かって行った。"},{"1":"@takadamori 関西の風土みたいなもんですね\\n( ^o^)"},{"1":"あ、観劇なのに飲みの予定入れてないわ。飲みたい…"},{"1":"@Toakun_J はじめまして。検索から参りました。\\nこちらのジョージ(あたり)1つ郵送にて譲渡希望なのですが可能でしょうか？\\nご検討いただけると幸いです。\\n宜しくお願い致します。"},{"1":"@chobi_chobi_p 二回とも万発ナウ( ´,_ゝ`)b"},{"1":"@nachonacho_0919 なんか女の子みたいな靴だなって言われたわ"},{"1":"全国各地でXbabyが前回のツアーよりも熱くなっているのが本当に実感できたし嬉しかったです。\\nこうやってみんなに全国へ会いに行けるのが有難いことですが、また絶対頑張って成長して会いに行くのでその時は日本全国の皆さん待っててくださいね？"},{"1":"「5月9日は号泣の日」って誰かやってるかと思ったら、誰もやってなかった。"},{"1":"とる●は2.5kで天井きたけど、楽しくはないな…\\n百だけ2個欲しかったからタイトー行ったけど、アシストばっかだったし頭おかしい狙い方しないと取れないよ😂\\n結果4000円で3個取れたからタイトー様様だけど https://t.co/vjfXLvdwwm"},{"1":"ゆたぼんの動画見たけど何も考えて無さすぎというかこいつイジメで不登校なった子全員から嫌われてるだろ(笑)"},{"1":"「夏の貴船が美しい」 https://t.co/ogu5JS3T8Y"},{"1":"さぁさぁ、季節限定 \\n#八ッ橋ラムネ味 を当てるでござる！\\n\\n応募方法は\\n・@yatsuzoをフォロー\\n・本ツイートをRT\\n\\n◾️ラムネ味\\nhttps://t.co/VhNL9TyBuv  \\n\\n◾️#チョコミント シフォンケーキ \\nhttps://t.co/EJOxuKUujK\\n\\n◾️冷やし鴨そばは、ぎをん為治郎\\nhttps://t.co/ZS7UtfV4qK\\n\\n #あなたの良いところは https://t.co/swBZIGgdu5"},{"1":"@echo18009211 バスケの練習着にどうですか？\\nお手頃価格です🔥"},{"1":"安倍9条改憲NO！憲法審査会に自民党改憲案を『提示』させるな！5・9国会議員会館前行動 https://t.co/FfBwMTkvWT"},{"1":"@pansy_j ほんと。でも助かる人がいることも事実ですし、複雑ですね"},{"1":"値上げですか…\\n\\n富士フイルム、写真フィルム製品を6月より値上げ - デジカメ Watch https://t.co/xC9PidsPjc"},{"1":"@anjyu_sub 仲良し〜(ﾉ´∀｀*)"},{"1":"@miraitan_17 明日入籍しようー！！\\U0001f970"},{"1":"@SU_KASU_ アイスクリーム🎵ユースクリーム🎵好きさ～🎶🐰"},{"1":"@komityanr1200gs 陰湿なイジメに遭っていたんですね...笑"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<h2 id="Live">ライブストリームの取得</h2>
+<p>今からつぶやかれる全てのツイートからランダムサンプリングする場合は<code>stream_tweets()</code>を使います。 デフォルトでは30秒間のツイートを取得します。</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tweets &lt;- stream_tweets(&quot;&quot;, timeout = 5)</code></pre>
+<pre><code>
+Streaming tweets for 5 seconds...</code></pre>
+<pre><code>
+Finished streaming tweets!</code></pre>
+<pre><code>
+opening file input connection.</code></pre>
+<pre><code>
+ Found 149 records...
+ Imported 149 records. Simplifying...</code></pre>
+<pre><code>
+closing file input connection.</code></pre>
+<pre class="r"><code>
+tweets %&gt;% 
+  select(text) %&gt;% 
+  paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["text"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"วันนี้ปณ.หยุดแจ้😂"},{"1":"ロバート先生は信頼できるお医者様です\\nどんな病人でも治してしまいます\\nロバート先生は評判高い名医です\\n\\n[Doctor Robert]"},{"1":"ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ아 뜬금없어서 개터젼ㅆ네"},{"1":"いまにこ～♡"},{"1":"ติดแล้วค่า รีอย่างเดียว ประกาศดึกๆ #dek62 https://t.co/gxhNmg9CE5"},{"1":"カッコつけてる訳ではないが、普段はコジャレた喫茶店に入るので久々にサイゼに来たら紅茶が勝手に出てこなかったり溢れた灰皿を取り替えに来てくれないことにちょっと戸惑っている。"},{"1":"เกียดมันว่ะ Starshowth อย่าได้เสนอหน้าจัดงานไหนอีกเลย"},{"1":"좀더 존버하면 디자인과 크기 다 만족스런게 나올거 같아 두근두근 https://t.co/2KcFf0jv1E"},{"1":"Se sarà addio vorrei all'ultima gara casalinga un saluto senza se senza ma di tutti, degno di un grande allenatore competente, professionale, serio e rispettoso.  Grazie  Massimiliano Allegri"},{"1":"@wuchinnyeo 울지마요 샘 ㅜ ㅜ"},{"1":"다시 그런 일이 생기면, 또 화날 거 같아요.\\n그게 제 진심이라서요.\\nIf something like this happens again,\\nI’m pretty sure I’ll be angry.\\nI really mean that.\\n#BTSWORLD #BTS월드\\n(https://t.co/gOnNHQxWqp) https://t.co/6770Df7oS4"},{"1":"اللهم أرضِّنا بقضائك وبارك لنا في قدرك حتى لا نحب تعجيل شيء أخَّرته، ولا تأخير شيء عجلت https://t.co/aYcAyUx4QL"},{"1":"https://t.co/cGG5hzPtZc"},{"1":"[📷] 190509 เดอะบอยซ์ จูฮักนยอน, 'ยิ้มที่อ่อนหวาน'\\n\\n📎 https://t.co/9gWRvVKWso\\n\\n#THEBOYZ #더보이즈 #JUHAKNYEON #주학년 https://t.co/NwN3WWr7k0"},{"1":"@nanaracka 大阪大会もうちょっと増やして欲しいなぁ🙏🙏"},{"1":"#당신_나_사랑으로_문장을_만들면_취향을_알_수_있다 https://t.co/mESZLE8TU5"},{"1":"#拡散希望 #里親募集中 \\n#熊本県 #人吉保健所\\n#犬のいる暮らし #いぬのきもち \\n#ペットショップに行く前に \\nこんなに可愛い子ちゃん😍トモちゃん🐶どうか家族にむかえてあげて下さい🍀 https://t.co/dA3RiBsKw1"},{"1":"guess who’s a fiend :) @queencierra33"},{"1":"[공지] #BTS [MAP OF THE SOUL : PERSONA] Lucky 이벤트 당첨자 안내 \\n\\nhttps://t.co/YPu63Xq7z1"},{"1":"รีวิวการมีมดลูก : ไม่ได้ใช้และสร้างปัญหารายเดือน"},{"1":"@shivkant_gautam @KapilMishra_IND @KanchanGupta @tavleen_singh @TajinderBagga No wonder Indira used to think whole country is her baap ki jaagir"},{"1":"👉Prof Philip Alston supports @AnnaMcMorrin EARLY DAY MOTION  https://t.co/6vktp3UKHp    …  … … whereby Prof Jones TEMPORARY SPECIAL MEASURE is activated     https://t.co/Hh3A3g9Np9  https://t.co/uKQ8EWeNka  \\n \\n Please could I ask you to sign?  @theresa_may  🙏\\nNot too late."},{"1":"Asks @bdomenech who funds the Federalist. Checks back to see if he replied. https://t.co/o5EwtTAVWD"},{"1":"@um_ali1986 😂😂😂الله بسلامه بس"},{"1":"😥😥😥😥 https://t.co/jSptXOFoIN"},{"1":"The biggest scam is giving a woman “space”"},{"1":"@_B114720114 I love you tooo💖💖"},{"1":"─── ･ ｡ﾟ☆: *.☽ .* :☆ﾟ. ───\\n\\n      𝘦𝘷𝘦𝘯 𝘵𝘩𝘦 𝘩𝘰𝘯𝘦𝘺𝘣𝘦𝘦𝘴 𝘨𝘦𝘵 𝘤𝘰𝘰𝘭\\n\\n  @Stray_Kids #STAYSelcaDay https://t.co/jKCLkDuSOs"},{"1":"Course: Crete.PythonMachineLearning.Oct07-11 https://t.co/GhrEUfAVC9"},{"1":"1. STAR WARS\\n2. ESDLA\\n3. Harry Potter\\n4. UCM\\n5. GOT"},{"1":"3 people followed me and one person unfollowed me // automatically checked by https://t.co/DtJCwohBXR"},{"1":"Panja Premier Record\\nGS Premier Record\\nCMGR Premier Record\\nAD Premier Record\\nSGS Non BB Premier record\\nAGV Non BB Premier Record https://t.co/qDyn6FElTI"},{"1":"構音障害：高齢者では入れ歯はずすと構音障害なこともある。構音障害は家族いるなら家族にも確認する。"},{"1":"@ykzts たすかる"},{"1":"@CNN https://t.co/9W7H7q6HYF"},{"1":"地元大阪の友人がとうとう「インスタ映えするカフェ」のことを「なんかシュッとした喫茶店」って言い出してオシャレ度が50下がってよしもと度が50上がった"},{"1":"@Shio48483751 しよーしよー👍"},{"1":"مُناي إن الشعُور اللي مرّني يُمرك."},{"1":"เนี้ยะะ หัวแง้วน่าจับลูบๆคีบคอมาหอมๆ https://t.co/qbWZlxDliK"},{"1":"صباح الخير 🌼 💙"},{"1":"คนโพสแจกเงิน1หมื่นถ้าติดแพทย์จุฬา แต่ทำไมกุฮาคนเม้นแต่ละคนขนาดนี้ 555555555555555555555555555 #dek62 https://t.co/vyzALDFWOI"},{"1":"New blessing!!! \\n\\nCno hula niyo??? \\n\\n😍\\n\\n#SayYoureHereWithRejoice"},{"1":"que bonita es tu sonrisa"},{"1":"La independència ressona a les escales neoclàssiques de la @cambrabcn @EinesdePais https://t.co/NOS6Hrprue"},{"1":"@straywalker これ完全に僕の言い間違いでしかも地味に伸びているので、SJISの「々」は記号扱いになっているので、バリデーションでひらがな・カタカナ・漢字・アルファベットにしたときに「々」が弾かれちゃうっていう表現に訂正させてください。\\nhttps://t.co/qcIViSSQ8M"},{"1":"If you have to fight to keep someone around do yourself a favor and let them go"},{"1":"ดุคือเยดุ55555555555"},{"1":"Ulol ka https://t.co/SHxhdOYMol"},{"1":"Tottenham fans right now https://t.co/DUHHHYujPG"},{"1":"松山市民あるある\\n\\n最優秀賞\\n大街道、銀天街の事を「街」と言う\\n\\n金賞\\n何県って言われる\\n\\n入選\\n松山駅と松山市駅の区別がつく\\n\\n松山市駅と松山駅紛らわしい\\n\\n俳句の宿題が必ずある\\n\\n街集合ね、で集まれる\\n\\n水曜日にポンジュースが出る\\n\\n帰省の時、ただいまつやまって言いたがる\\n\\nエミフル行きがち https://t.co/zLMZpd7Gcu"},{"1":"@araorree Khob Khun na kaaaa🖤"},{"1":"แฟนบอยมาเหนือแรพจีบน้อง รีแอคน้องแบบ 5555555555555555 https://t.co/Gn2ZsJgx9B"},{"1":"Funny how both teams in the final have been handled by barca😂"},{"1":"long time no tweet :&gt;&gt;"},{"1":"معلومات عن نادى العين للفروسية والرمايه والجولف .... أهم نادي في الإمارات #معلومات https://t.co/OgyTrSPGho"},{"1":"Be thankful for what you have. You have no idea how many people would love to have what you've got.\\n#ThursdayMotivation"},{"1":"the lil tuft of hair please &amp; the boyfriend hoodie https://t.co/O9gaE353kP"},{"1":"It strikes me it may have been foolish to schedule an election near mothers day, and then attack Bill Shortens Mum. 😤 https://t.co/kapY53x4bn"},{"1":"Xxxeshi спрашивает: «Какие требования существуют при передаче управления сообществом от владелеца к админу, если владелец забросил свой аккаунт?» #вконтакте\\n\\nПроблема в том что владелец сообщества забросил страничку ВК, при этом он был владельцем гр…\\nhttps://t.co/nKyzg5EPdb"},{"1":"@zindanyoldasi Ölüm orucuna katılacak 2. Gruptaki arkadaşlar! \\n\\nYaşar Çınlar\\n\\nMuhammed İnal\\n\\nDiyadin Akdemir\\n\\nEngin Karaman\\n\\nİbrahim Doğan\\n\\nA. Emin Eren\\n\\nMustafa Taştan\\n\\nSena Efe\\n\\nBurhan Şık\\n\\nFaysal Atak\\n\\nŞefik Kayhan\\n\\nReşat Özdil\\n\\nZeki bayhan\\n\\nYılmaz Yıldız \\n\\nSait Öztürk\\n Taymda bu var heval"},{"1":"Pop Quiz for Cis Male Pundits. Without Googling: \\n-Define \"ectopic pregnancy.\" \\n-What do the following acronyms stand for? LMP, NVP, IUD, D&amp;C\\n-What body part is cut in an episiotomy?  \\n-Name three off-label uses for hormonal birth control."},{"1":"Kuya @PBBabscbn kahit sa PBB OTSO GOLD lang sila palagi okay lang.\\nThe best among the rest kayo\\n @louyanong @itsdredesu\\n@gucong_yamyam @fumfumfum3 ang LAKAS niyo UNBEATABLE COUPLE + Laughtrip partner= UNBEATABLE RATINGS/HAKOT VIEWERS #THATSLAYF \\n\\nhttps://t.co/6LnNBPB7qt https://t.co/CLhzQQgYsq"},{"1":"ความต่างที่ลงตัว💚\\n#ออฟกัน \\n#KazzAwards2019 https://t.co/KgWlQNa4ZG"},{"1":"ninguém:\\n\\nabsolutamente ninguém mesmo:\\n\\nlucifer:\\n https://t.co/eA0wpodUO8"},{"1":"พระโคกินประยุดได้มั้ยคะ เพื่อประเทศชาติของเรา"},{"1":"พระโคบอกพระโคไม่กินของเน่าเสีย https://t.co/wlPls51qLR"},{"1":"au final on se trompe sur pas mal de gens"},{"1":"@Khaahorri ایسے ہی کُٹ پڑنی چاہئے۔"},{"1":"Bonjour twitteeeeeeeer !\\n\\nCe soir, 20h, 2h de stream sur #dofus en trio ! N'hésitez pas à venir faire un coucou, j'ai un nouvel overlay pour rafraîchir un peu mes lives :v"},{"1":"ربي أعوذ بك من الكسل وسوء الكبر ربي أعوذ بك من عذابٍ في النار وعذاب في القبر https://t.co/g7rB0J4bZI"},{"1":"【Next💗名古屋】\\n\\n💠5/11(土)①13:00～\\n@金山駅南口マルシェ\\n\\n🎉②MION⇨18:15～\\n松澤あんな氏生誕祭\\n@シアターゾーン\\n🎟予約1,500円(+1drink)\\n⇨メールorリプへ\\n\\n💠5/12(日)12:30～\\n#栄ミナミ音楽祭\\n@松坂屋さくらパンダ広場\\n\\n今週末はこちら☺️\\n名古屋も盛り沢山だよ💕\\n\\n最高の２日間にしようね🌈✨"},{"1":"山田ひざしとはカップルとか夫婦にはならんくていいからデートしたいデート、デートしよ、オシャンなフレンチとかじゃなくて夜居酒屋で枝豆食べながらビール飲むとかがいい"},{"1":"ఆర్థిక పరిస్థితిని చక్కదిద్దే ప్రయత్నంలో చీఫ్ సెక్రటరీ కాంట్రాక్టర్ల బిల్లుల పేమెంట్స్‌కు కొన్ని నిబంధనలు సూచించారట. ఈ రూల్స్‌తో బాబుకు ఎన్నికల ఫండింగ్ చేసిన కాంట్రాక్టర్ల బిల్లులు ఆగి పోయాయి. ఇదే అసలు కడుపుమంట. కేబినెట్ మీటింగ్ పేరుతో దీనిపైనే రచ్చచేయాలని చూస్తున్నారట."},{"1":"iPhoneめんどくさくなったから今度変える時Androidにしよっかな…ってぐらいiPhoneめんどくさい"},{"1":"พระโคยังมีสิทธิ์เลือก แล้วกูล่ะ"},{"1":"@cody_mini4 あら❤️\\n\\n好き❤️"},{"1":"@tyatorashiro @YahooNewsTopics もう、終わってるな。#さよなら韓国"},{"1":"Bila member kerja kau semua cina 😂 https://t.co/Mdfan6s0MK"},{"1":"@madonnadailyxox 🤫🤫🤫🤫🤫 https://t.co/rJb40Rj27s"},{"1":"\\U0001f970👋\\n#하성운\\nhttps://t.co/1KC31vidCO \\n1 https://t.co/Zcxa24heF8 \\n2 https://t.co/VoCPxTjdQt https://t.co/VwkiGhGw7R"},{"1":"я жива"},{"1":"@AigisFucker No"},{"1":"@toriaka78 DM送らせていただきますので確認よろしくお願い致します。"},{"1":"Can I get a scene in a Marvel movie where these three just sit and have a conversation https://t.co/1ixhHB0e8B"},{"1":"new carti leak!! tyler the creator feat. playboi carti — earfquake https://t.co/CHH6DvDhXm"},{"1":"อีก 3 วัน เท่านั้น! ออกอากาศเทปแรก Beauty No.9 ใครจะเป็น Beauty girl คนแรกที่จะมาแปลงโฉมสุดว้าว โดยไม่พึ่งศัลยกรรม ต้องรอติดตาม! 😉\\n.\\nBeauty No.9\\nทุกวันอาทิตย์ เวลา 21.15 น.\\nทางเวิร์คพอยท์ ช่อง 23\\nเริ่ม 12 พฤษภาคมนี้!\\n#BeautyNo9 #KoreanBeauty #Workpoint23 #comingsoon https://t.co/zFiSMIRtN0"},{"1":"That maybe tops last night from Tottenham. Ajax got too complacent but Spurs were the better side for the majority. Unbelievable game. Turin-like. Fair dos to Tottenham to have a season like they’ve had. What a coach they have, regardless of lack of silver. #AJATOT"},{"1":"JJ Knight &amp; William Seed\\nFull Video here: https://t.co/4jkJf6vU92 https://t.co/yv3DU7bVZo"},{"1":"@lR0NMVN No, you order for me."},{"1":"Even the robe was a killer"},{"1":"@DIMPHONHLANHLA1 @high_imdessie @PunkieMbatha https://t.co/ZaM443F1LP"},{"1":"Me: Open for an obvious passing play\\n\\nChamp 2 console teammate using the cloud 9 decal: https://t.co/XRhPXLCVOR"},{"1":"Utiliser l'image de de cette grande dame, c'est très très limite. Je suppose que le parti a eu l'autorisation de la famille ? \\n@jfkbismuth @enmarchefr @S_Trompille @pierre_lt https://t.co/UHZ55zvUvh"},{"1":"@333mmm111 プラトニックな年の差ものなんで好き嫌いあると思うんですがこういうのとかどうですかね… https://t.co/7EZBzG8rlJ"},{"1":"\"What the Democrats on the Judiciary Committee are doing is undermining our democracy and helping Vladimir Putin.\" Congresswoman Liz Cheney (R-Wyoming). https://t.co/yjzE1xbwn3"},{"1":"you know what I miss them so much\\n https://t.co/SLePqNJgAo"},{"1":"We Love You Our Krist &amp;​Singto \\n\\nSpecial Thx. \\nBanner maker : @bybbenmoru\\npic : @Peraya_official\\nVdo maker : @aehmate__\\nVdo owner : @baXllnatural / @aon_weii / GMMTV / Attitude Magazine​ / OK Magazine\\n\\n#KristSingtoBestCoupleAward2019\\n#OnlyForKristSingto\\n#ทีมพีรญา https://t.co/PsK00R9XxB"},{"1":"今年から消費税上がるのかー\\nすっかり忘れてた"},{"1":"コナンの映画を片っ端から視聴なう"},{"1":"https://t.co/jlGmRGi8ZZ"},{"1":"سبحان الله عدد ماخلق\\r\\nسبحان الله ملء ماخلق\\r\\nسبحان الله مافي السموات والارض\\r\\nسبحان الله عدد مااحصى كتابه\\r\\nسبحان الله ملء مااحصى كتابه"},{"1":"#FF14 遠回しにいって伝わらないと、途端にストレートになる姫ちゃん https://t.co/6KAeetfn5X"},{"1":"#歴史 #モンゴル帝国 #チンギスハン #北方謙三 #読書 へっぶしんのニュースや日記 : ～モンゴルの草原に思いをはせる(3)～ 『虹暈～チンギス紀三』(北方謙三)を読んで\\nhttps://t.co/CQjEy8VhnT"},{"1":"ติดอันดับ1 แจก 10,000กีบ #dek62 5555555แจกจริง!"},{"1":"お昼休みに買い出しに行った帰り道。ドラレコに映った児島の街並みを…じゃのぉて！！こんな奴が居るけぇ事故が無くならんのんじゃ💢\\n免許返せ！！！ https://t.co/Hfv9xHP7OC"},{"1":"【つるの 育休は休みじゃない】\\nhttps://t.co/AkiXz5TEMD\\n\\n歌手、俳優など多方面で活躍しながらも、2度の育児休業を取得したつるの剛士。育休を取ることを決意した大きな理由は、「このままじゃ奥さんにフラれる」と思ったことだという。"},{"1":"if you got me, i got you &amp; dats on my soul."},{"1":"الان زنگ بزنی پشتیبانی شاتل می‌گه پلاک برجام رو یکبار از برق بکشید، چند دقیقه صبر کنید، دوباره بزنید. اگر درست نشد مجدد تماس بگیرید."},{"1":"Retweeta ou acontece-te o mesmo. https://t.co/BFONXitfZT"},{"1":"@NEWND5 Teşekürler can yoldaş, huzurlu mutlu bir gün olsun,hepimizin ihtiyacı var,sevgiyle kal mutlu kal, 🤗🌻🙋‍♀️\\n✊✊✌✌🇹🇷🇹🇷"},{"1":"Pfff, con envío gratis cualquiera... https://t.co/ItPifgPgM3"},{"1":"10 मई 2019 को छोटी काशी मण्डी के \"पड्डल मैदान\" में, आदरणीय प्रधानमंत्री श्री नरेन्द्र मोदी जी की \"विशाल जनसभा\" में पहुँच कर \"फिर एक बार मोदी सरकार\" के संकल्प को पूरा करने के लिए अधिक से अधिक संख्या में पहुंच कर भव्य स्वागत करें।\\n\\n#MandiKaChowkidar\\n#अबकीबारफिर4की4\\n#मिशनलोकसभा2019 https://t.co/g7HGkziFD6"},{"1":"أقسم بالله كل واحد هيعمل ريتويت وفولو ويكتب تم هبعتله رقمي ع الخاص 💋 https://t.co/gKtbEKr0Qu"},{"1":"계속 고민하고 또 고민해왔던 거예요.\\n내가 정말 하고 싶은 게 뭔지…\\n我已经苦恼好久了。\\n我真正想做的，到底是什么…\\n#BTSWORLD #BTS월드\\n(https://t.co/gOnNHQxWqp) https://t.co/YMaXaEBU8K"},{"1":"https://t.co/qrvQaJKZlg https://t.co/3rk4IkvYld"},{"1":"She saw it again and mouthed thank you in Thai. I’m so touched \\U0001f97a น้องงงขอบคุณนะคะที่ตื่นเต้นตลอดเวลาเห็นคนไทยที่ต่างเมือง wished I could have film her first reaction (2/2) #BLACKPINKinFTWORTH #BLACKPINK https://t.co/KT06ccnirj"},{"1":"@mayward_bebes #SayYoureHereWithRejoice \\nThe One, the only Marydale Maymay Entrata!!! https://t.co/KeFDUUmQ5d"},{"1":"us coming online to see another iced coffee tweet from ashton https://t.co/EE2958xkJX"},{"1":"Full story on @JohnnyMercerUK here. MP goes on strike in protest at PM's failure to protect troops https://t.co/2FfDPALuz6"},{"1":"Pero no me encanta que no esté conmigo"},{"1":"@IbrahimKanaan سحب الكابل والكبلات ، التشنج بيروح وحدو 😉 \\nبس  للتصحيح."},{"1":"San-nators how y’all feeling https://t.co/Ijr6JUsStJ"},{"1":"@DublinShar @Ciaran_Long_89 @BelfastGiants If Conor does come over for a \"Skate With The Giants\" event. Blaze will go too. #GoalieClub"},{"1":"i’m scared send help plz https://t.co/2bZaXWCn6r"},{"1":"@Lynkiix @Ryan_Shallard @yomuma24 @JWhitpen @MaxPlaysFIFA Ngl i dont want spurs to win it cause we are shit in UCL and you lot winning it first aint great but also dispise liverpool fans so well... Id rather have you win it tho cause twitter would be unbearable otherwise... but what hes saying is just retarded😂"},{"1":"Lol SA huns would rather screenshot your “hey” and try drag you on the TL calling it “tea”... crisis 🤷🏽‍♂️ https://t.co/tEVttBsqyW"},{"1":"会员专享：新丝路签约模特😊净高176💕36D💫S级完美身材👍👍👍名媛气质，加微获取！ https://t.co/f67dHW7bld"},{"1":"มีมใหม่สำหรับ หล่อลื่น https://t.co/Yti4GJNJco"},{"1":"역시 부산사람들....쏴라 있네~~~~ㅋㅋ https://t.co/NdoZ9C68jk"},{"1":"⋅⋅⋅ minnie ♡ #민니\\n© ming ming → 190505 .*˳✧༚ https://t.co/a67R2Q4brc"},{"1":"@mitchellvii What crime was he asked to commit? Releasing Grand Jury redacted parts? That is a LIE. Barr can apply to the Court to authorize release, And everyone has cause to be afraid of Barr. He is a Trump hack with brains."},{"1":"LOOK: Cardinal Luis Antonio Tagle washes the feet of 12 young people during the Holy Thursday Mass of the Lord's Supper at the Manila Cathedral. #HolyWeek2019 #VisitaIglesia #cbcpnews https://t.co/T2wbRDFbjJ"},{"1":"UKIP candidate in Cambridgeshire wants a National Solution to rid the streets of...people. https://t.co/s7l40SwPFu"},{"1":"@ochiai_kirari 個握楽しもうな✋"},{"1":"PS Vita版『EVE rebirth terror』のアップデートファイルを、本日より配信開始しました。 https://t.co/TlIJlDnPEe"},{"1":"🖤 @mtuan93🖤\\n\\n#MARK #GOT7 #마크 #갓세븐 https://t.co/IzKPkTkBaf"},{"1":"كيف نُخبر البحر اننا على اليابسه نغرق."},{"1":"GWにウチの同人誌の無断転載や翻訳転載してる海外サイトをFANZA同人とDLサイトコムに代理削除申請しておいたけど、今確認したらキッチリ消去されてて効果を体感しました。同人誌の違法アップロードにお困りの同人描きは電子書籍化してFANZA同人やDLサイトコムに登録しよう"},{"1":"Excellent reviews all over. \\n#Maharshi is the true summer Blockbuster!!!!\\U0001f973\\U0001f973\\U0001f973\\n\\n#MaharshiDay #MaharshiReview #MaharshiPublicTalk @directorvamshi\\n@ThisIsDSP\\n\\nhttps://t.co/9KgrEGPaM1"},{"1":"💢💢💢💢─────LoLi_ta_Complex"},{"1":"เป็นการสักคิ้วที่โคตรเนียน อยากบินไปสักด้วยเลยอ่ะ 😮 https://t.co/iyOSxi8ZIR"},{"1":"В одном из французских ресторанов клиенты, ожидающие свой заказ, видят на своём столе вот такое 3D-шоу, созданное с помощью проектора.\\nА вот шоу с \"дидами\" на палках, пилотками, парадом колясок и детских войск, картонными танками и надувными ракетами, французам никто не покажет https://t.co/JvERvIIXkq"},{"1":"@kwita215 その言い方www"},{"1":"@crcaroliner Eu amo este homem"},{"1":"@NarangNarangi @rockygerung Untuk para kampret/codot yg sk nyinyir, nyebar hoax dn fitnah, menggiring opini dn narasi kebencian, stop gerakan merongrong kedamaian negara,  sampaikan kritik dn pendapat secara cerdas, cek dulu beritanya di tv/internet baru klo tidak ada kalian sampaikan di sini, paham pret!?"},{"1":"@Aruna4udara මේ කොහෙද බන් අරුණ?"},{"1":"G Neville, Jose Mourinho, at the time, told us that it was his greatest ever achievement finishing second with that team. We all laughed at him, he's joking, that's just Jose playing games. Maybe he was right! (Sky) #mufc"},{"1":"😍😍😍💕"},{"1":"Inside the Far-Right Conspiracy Movement That's Preparing for a Showdown With Germany's Government \\nhttps://t.co/S3Or7FEgWc"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<h3>地域のライブストリームの取得</h3>
+<p>しかし、全世界のツイートを欲しいという状況は少ないと思います。 例えば、東京でつぶやかれるツイートのみを取得したいとします。</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tweets &lt;- stream_tweets(lookup_coords(&quot;tokyo, jp&quot;, apikey = apikey), timeout = 5)</code></pre>
+<pre><code>
+Streaming tweets for 5 seconds...</code></pre>
+<pre><code>
+Finished streaming tweets!</code></pre>
+<pre><code>
+opening file input connection.</code></pre>
+<pre><code>
+ Found 8 records...
+ Imported 8 records. Simplifying...</code></pre>
+<pre><code>
+closing file input connection.</code></pre>
+<pre class="r"><code>
+tweets %&gt;% 
+  select(text) %&gt;% 
+  paged_table()</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["text"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"アイス始めた (@ ドトールコーヒーショップ 日本橋室町4丁目店 in 中央区, 東京都) https://t.co/3f2lJy4nkG"},{"1":"@IF0430STARWARS 飛ばしてないけど、この前フェリーで来たらしいね~"},{"1":"#保育士さんありがとう"},{"1":"@maa__120 @ss_1611 うちが通ってるとこバス出てるよ！"},{"1":"@KAZZZ0621 @Nao_VT250 @kazu_jogrom Σ(ﾟﾛﾟ;)\\n土地勘が無い( ´･ω･`)"},{"1":"どうかよろしくね⤴😃\\n🚺綾\\n💼22～25 フリーター\\n🏠山梨 山梨市\\n📁恋人・友達募集\\nhttps://t.co/JxJsYOGj10"},{"1":"明日はオンコリスの決算？\\n決算後要監視！"},{"1":"編込一本鞭65㎝、100㎝の黒と赤が入荷しました。8本編みで細かく編み込まれた一本鞭です。どちらも使いやすい長さ。場所を選ばないのは65㎝。一本鞭！って感じは100㎝。\\nhttps://t.co/0OUQsgKJrN https://t.co/WatzJh05v6"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<ul>
+<li>他にもキーワードやユーザーIDでも取得することができます（その場合はGoogle MapsのAPIキーは必要ありません）。</li>
+</ul>
+<p><em>（2019年5月9日追記）</em>ツイート時間<code>created_at</code>はグリニッジ標準時で記録されているので、日本時間にするには9時間だけ足す必要があります。</p>
+<h2 id="Others">その他の情報の取得</h2>
+<ul>
+<li><code>get_friends()</code>：特定のユーザーがフォローしているユーザーを取得する。</li>
+<li><code>get_followers()</code>：特定のユーザーをフォローしているユーザーを取得する。</li>
+<li><code>get_favarites()</code>：特定のユーザーのいいねを取得する。</li>
+</ul>
+<!--radix_placeholder_article_footer-->
+<!--/radix_placeholder_article_footer-->
+</div>
+
+<div class="d-appendix">
+</div>
+
+
+<!--radix_placeholder_site_after_body-->
+<!--/radix_placeholder_site_after_body-->
+<!--radix_placeholder_appendices-->
+<div class="appendix-bottom"></div>
+<!--/radix_placeholder_appendices-->
+<!--radix_placeholder_navigation_after_body-->
+<!--/radix_placeholder_navigation_after_body-->
+
+</body>
+
+</html>

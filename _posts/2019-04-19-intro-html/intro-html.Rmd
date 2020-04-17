@@ -1,0 +1,658 @@
+---
+title: "政治学のためのHTML/CSS入門"
+description: |
+  スクレイピングと個人ウェブサイト作成のために必要なHTMLとCSSの基礎知識を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "2019-04-19"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - html/css
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+政治学においてウェブサイトの知識が必要になる局面としては少なくとも次の2つがあります。
+
+1. ウェブスクレイピング
+1. 個人ウェブサイトの作成
+
+そこで、今回はこれらを実施する際に必要となる最低限の知識について紹介します。
+
+基本的に、ウェブサイトは`.html`ファイルによって構成されています。
+`.html`ファイルには文章や画像のパスなどのコンテンツが記入されています。
+
+HTMLはマークアップ言語でタグ付けすることにより各要素の役割と外見を紐付けます。
+具体的には`.css`ファイルによってそれぞれのタグなどをどのように表示するか指定します。
+
+その他に、JavaScriptによってより動的な表現・サービスを行ったり、PHPによってサイトの構築と動的サービスを一体的に行ったりします。
+ひとまず、ウェブスクレイピングには`.html`ファイルの、ウェブサイト作成にはそれに加えて`.css`ファイルの知識があれば最低限のことはできます。
+
+|   |HTML|CSS|JS|PHP
+|---|---|---|---|---|
+|ウェブスクレイピング|必要|必要ない|必要ない|必要ない|
+|ウェブサイト作成|必要|必要|もしかすると必要|もしかすると必要|
+
+## HTML {#HTML}
+
+まず、[Bootstrap 4](https://getbootstrap.com/)というフレームワークのサンプル`.html`ファイルを見てみましょう。
+
+<aside>
+  フレームワークとはある言語を実行する際の便利なテンプレートのようなものです。
+</aside>
+
+```{}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+  </head>
+  <body>
+    <h1>Hello, world!</h1>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
+```
+
+これはブラウザ上では[このように](sample.html)表示されます。
+
+<aside>
+  ブラウザとはウェブサイトを閲覧するためのソフトでFirefoxやGoogle Chromeなどがあります（Internat ExplorerやEdgeというものはFirefoxとGoogle Chromeをダウンロードするためのソフトです）。
+</aside>
+
+以下ではHTMLの代表的なタグと要素について説明していきます。
+
+### headとbody
+
+なんとなく分かると思うのですが、基本的に`<...>`がタグの始まりで`</...>`がタグの終わりになっています。
+そして、`...`がタグの名前になっています。
+
+`.html`ファイルではまず`head`と`body`に大きく分けられます。
+`head`ではメタデータの設定（例えば文字コードやサイトのタイトル）や`.css`ファイルの読み込みなどを行います。
+ときどき、この例のように`body`内でJavaScriptを読み込むときもあります。
+
+次に、`body`内においてウェブサイト上に表示される情報を記述します。
+ウェブスクレイピングをする際には基本的に`body`内を見れば事足ります。
+
+<aside>
+  なお、`<!--`と`-->`で囲まれている箇所はコメントアウトされます。
+</aside>
+
+### hタグ
+
+`h`タグとは論文や本における見出しのようなものです。
+上記の例で言えば、`<h1>Hello, world!</h1>`がそれに当たります。
+
+`h2`、`h3`と番号が大きくなるにつれてより小さな見出しになっていきます。
+例えば、このページの`h`タグ次のようになっています。
+
+```{}
+<h1>政治学のためのHTML/CSS入門</h1>
+
+<h2 id="Intro">はじめに</h2>
+
+<h2 id="HTML">HTML</h2>
+
+<h3 id="headbody">headとbody</h3>
+
+...
+```
+
+### pタグとaタグ
+
+さて、このページのHTMLの節の最初の一文は`.html`ファイルでは次のように記述されます。
+
+```{}
+<p>まず、<a href="https://getbootstrap.com/">Bootstrap 4</a>というフレームワークのサンプル<code>.html</code>ファイルを見てみましょう。</p>
+```
+
+`p`タグは文章を記述する箇所で、`a`タグはリンクを張るタグになります。
+`a`タグの中の`href =`の箇所でリンク先のパスやURLを記述します。
+
+### リスト
+
+このページの冒頭で番号付きの箇条書きの箇所がありますが、これは以下の様に記述されます。
+
+```{}
+<ol type="1">
+  <li>ウェブスクレイピング</li>
+  <li>個人ウェブサイトの作成</li>
+</ol>
+```
+
+`ol`タグは順序付きリストを作成するタグで、`li`タグはリストの項目を記述します。
+ちなみに、`ul`にすると順序なしリストになります。
+
+- ウェブスクレイピング
+- 個人ウェブサイトの作成
+
+```{}
+<ul>
+  <li>ウェブスクレイピング</li>
+  <li>個人ウェブサイトの作成</li>
+</ul>
+```
+
+### テーブル
+
+このページ冒頭のテーブルは以下のように記述されています。
+
+```{}
+<table>
+  <thead>
+    <tr class="header">
+      <th></th>
+      <th>HTML</th>
+      <th>CSS</th>
+      <th>JS</th>
+      <th>PHP</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="odd">
+      <td>ウェブスクレイピング</td>
+      <td>必要</td>
+      <td>必要ない</td>
+      <td>必要ない</td>
+      <td>必要ない</td>
+    </tr>
+    <tr class="even">
+      <td>ウェブサイト作成</td>
+      <td>必要</td>
+      <td>必要</td>
+      <td>もしかすると必要</td>
+      <td>もしかすると必要</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+まず、`table`タグでテーブル全体を囲み、`thead`タグと`tbody`タグでヘッダーとボディを囲みます。
+そして、`tr`タグで各行を決めて、`td`タグで各セルの中身を記述しています。
+
+### divタグ
+
+`div`タグとは分割を意味するタグです。
+このページのタイトルは以下のようになっています。
+
+```{}
+<div class="d-title">
+  <h1>政治学のためのHTML/CSS入門</h1>
+  <p>スクレイピングと個人ウェブサイト作成のために必要なHTMLとCSSの基礎知識を説明します。</p>
+</div>
+```
+
+- `div`タグそれ自体に意味はないですが、そこからどこまでが一つの塊なのかを明らかにするのに役立ちます。
+
+### idとclass
+
+タグの中で`id`や`class`を指定することができます。
+例えば、`<h2 id="Intro">はじめに</h2>`や`<tr class="header">...</tr>`といった形です。
+
+これらはそれぞれ特定のタグの目印となるものですが、以下のような違いがあります。
+
+- `id`は複数のタグで同じものを使えない。
+- `class`は複数のタグで共通のものが使える。
+
+<aside>
+  しかし、そこまで厳密に使い分けているとも限りません。
+</aside>
+
+## CSS {#CSS}
+
+続いて、HTMLとCSSの編集方法を簡単に学びます。
+なお、実際にウェブサイトを作成する際にはR Markdownで作る、Bootstrap 4などのフレームワークを使うなどしたほうがいいでしょう。
+
+練習用の`.html`ファイルと`.css`ファイルを圧縮した[zipファイル](sample.zip)をダウンロードして、適当な場所で解凍してください。
+中に、`index.html`と`sample.css`というのがあるはずなので、それらを適当なテキストエディタで開きます。
+
+<aside>
+  ガチ勢はVimやEmacs、宗教論争に巻き込まれたくないライト層はAtomやSublime Textを使うのが定番でしょうか。
+  ~~そんなのどうでもいい~~エディタにこだわりのない人はRStudioでもできます。
+</aside>
+
+なお、編集結果はブラウザで見ながら作業をしたいと思うので、`index.html`はブラウザでも開いてください。
+
+`index.html`にはある程度記述がありますが、`sample.css`は空白のはずです。
+以下ではこれらを編集しながら使い方を学びます。
+
+`index.html`の`head`タグ内に
+
+```{}
+<link rel="stylesheet" href="sample.css">
+```
+
+という記述があります。
+これは、（`index.html`と同じディレクトリにある）`sample.css`をスタイルシートとして読み込む、という意味です。
+
+### リンクを貼る
+
+このサンプルデータは2019年の大阪市長および大阪府知事のダブル選挙の結果のページになっています。
+もとのデータは[選挙ドットコム](https://go2senkyo.com/)から拝借しました。
+
+そうならば、引用元のページのリンクを貼るというのがマナーでしょう。
+前述したようにリンクを貼るには`a`タグを使います。
+例えば、
+
+```{}
+<p>以下の情報は選挙ドットコムからお借りしました。</p>
+```
+
+を
+
+```{}
+<p>以下の情報は<a href="https://go2senkyo.com/">選挙ドットコム</a>からお借りしました。</p>
+```
+
+と書き換えてください。
+
+そして、`sample.thml`をエディタ上で保存し（`Ctrl + S`を押し）、ブラウザ上で更新して（`Ctrl + R`を押して）ください。
+すると、「選挙ドットコム」の場所にリンクが貼られているはずです。
+
+<aside>
+  この`Ctrl + S`と`Ctrl + R`はウェブサイトの作成において必須です。
+</aside>
+
+ちなみに、以下のように`target="_blank"`とすることでリンク先を新しいタブで開きます。
+
+```{}
+<p>以下の情報は<a href="https://go2senkyo.com/" target="_blank">選挙ドットコム</a>からお借りしました。</p>
+```
+
+### 全体への適用
+
+ここからは`sample.css`を編集して文字の見た目を変化させていきたいと思います。
+
+まずは、デフォルトのダサいフォントを変えたいと思います。
+何がきれいなフォンとかは人それぞれだとは思いますが、僕はGoogleとAdobeの`Noto Sans`が好きです。
+
+また、（読み込みに時間がかかるという問題はあるものの）ウェブ上で無料でフォントをインポートできるので、デバイスに依存せずにフォントを決めることができます。
+`sample.css`の冒頭で、
+
+```{}
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans+JP');
+```
+
+と記述することで`noto Sans JP`をオンラインでインポートします。
+
+そして、次のように記述すると全ての文字に`Noto Sans JP`が適用されます。
+
+```{}
+* {
+  font-family: 'Noto Sans JP';
+}
+```
+
+`sample.css`を保存し、ブラウザを更新すると（分かりにくいですが）フォントが少しスマートになったような気がするはずです。
+
+さて、CSSの記述ですが、まず最初にどのタグに適用させるかを決めます。
+今回は`*`とすることで全てのタグに適用させています。
+
+続いて、`{}`内に適用させる内容を記述します。
+今回は`fontfamily`でフォントの種類を指定しています。
+そして、`:`の後ろに指定内容を記述し、`;`で閉じます。
+
+### 特定のタグへの適用
+
+特定のタグに適用したい場合も`{}`の前にタグの名前を記述します。
+例えば、`h1`タグを中央揃えにしたい場合は以下のように記述します。
+
+```{}
+h1 {
+  text-align: center;
+}
+```
+
+複数のタグを一括して選択することもできます。
+例えば、`h1`から`h3`タグ全ての文字の太さを標準にします。
+
+```{}
+h1, h2, h3 {
+  font-weight: normal;
+}
+```
+
+同じタグであれば一括して指定されます。
+例えば、
+
+```{}
+td {
+  padding-left: 15px;
+}
+```
+
+とすると、表の全てのセルの左側に15ピクセル分の余白が生まれます。
+
+### CSSパス
+
+特定の条件のタグだけに適用させたい場合もあります。
+例えば、候補者の情報だけを右揃えにしたい場合、`td`タグに一括で適用させるとうまく行きません。
+そのような場合は、次のように書くことで`tbody`タグ内の`td`タグにだけ適用させることができます。
+
+```{}
+tbody td {
+  text-align: right;
+}
+```
+
+### CSSセレクタ
+
+より細かく指定したい場合は`id`や`class`といったCSSセレクタを使用します。
+例えば、大阪市長選挙の文字を緑、大阪府知事前挙の文字を青色に変えたい場合は、次のように書きます。
+
+<aside>
+  本当はRGB方式で色指定をしたほうがいいです。
+</aside>
+
+```{}
+#city {
+  color: green;
+}
+
+#prefecture {
+  color: blue;
+}
+```
+
+- `#`は特定の`id`がついているタグだけに適用するという意味です。
+
+続いて、以下のように書くことで当選者の背景を赤色にすることができます。
+
+```{}
+.elected {
+  background-color: red;
+}
+```
+
+- 特定の`class`に適用したい場合は`.`を使います。
+
+最終的には[こちら](sample/index.html)のようになっていると思います。
+
+## Bootstrap`*`
+
+先程も触れたように、本格的なウェブサイトを作成したい場合、一から書くよりは既存のフレームワークを利用したほうが楽です。
+例として、おそらく一番普及しているであろう[Bootstrap 4](https://getbootstrap.com/)というTwitter社が開発したフレームワークの初歩的な使い方を解説します。
+
+<aside>
+  R MarkdownもBootstrap 3に依拠しているはずです。
+</aside>
+
+- 日本語のドキュメントは[こちら](https://getbootstrap.jp/docs/4.3/getting-started/introduction/)です。
+
+### テンプレート
+
+Starter templateとされている以下のコードをコピー&ペーストして適当な`.html`ファイルとして保存してください。
+そして、先ほどと同様に`.html`ファイルをエディタとブラウザで開きましょう。
+
+```{}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+  </head>
+  <body>
+    <h1>Hello, world!</h1>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
+```
+
+### レスポンシブデザイン
+
+レスポンシブデザインとはディスプレイの大きさによって表示を変化させるようなウェブデザインのことです。
+これによPCで開いてもスマートフォンで開いても適切に表示されるようになります。
+
+Bootstrapではグリッドシステムによってこれを実現しているのですが、そのために、まずは`container`クラスの`div`タグ内に内容を記述する必要があります。
+
+```{}
+<h1>Hello, world!</h1>
+```
+
+を
+
+```{}
+<div class="container">
+  <h1>Hello, world!</h1>
+</div>
+```
+
+のように書き換えます。
+すると、若干左に余白が生まれてナイスな感じになります。
+
+グリッドシステムの詳細はドキュメントを参照してもらうとして、先程の大阪ダブル選挙の結果をもう少しきれいにしたいと思います。
+以下のコードをコピー&ペーストして上書きしてみてください。
+
+```{}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>HTML/CSS練習</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>HTML/CSS練習</h1>
+  
+      <p>このページは2019年の大阪市長選挙および大阪府知事選挙の結果をまとめたものです。</p>
+      <p>以下の情報は<a href="https://go2senkyo.com/">選挙ドットコム</a>からお借りしました。</p>
+  
+      <h2 id="city">大阪市長選挙</h2>
+  
+      <h3>概要</h3>
+  
+        <ul>
+          <li>投票日：2019年4月7日</li>
+          <li>投票率：51.7%</li>
+          <li>前回投票率：50.51%</li>
+          <li>事由：辞職</li>
+        </ul>
+  
+      <h3>候補者</h3>
+  
+      <table>
+        <thead>
+          <tr>
+            <th>名前</th>
+            <th>年齢</th>
+            <th>性別</th>
+            <th>所属</th>
+            <th>新・現</th>
+            <th>職業</th>
+            <th>経歴</th>
+            <th>得票</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="elected">
+            <td>松井一郎</td>
+            <td>55歳</td>
+            <td>男性</td>
+            <td>大阪維新</td>
+            <td>新人</td>
+            <td>政党役員</td>
+            <td>元大阪府知事</td>
+            <td>660,819票</td>
+          </tr>
+          <tr>
+            <td>柳本顕</td>
+            <td>45歳</td>
+            <td>男性</td>
+            <td>無所属</td>
+            <td>新人</td>
+            <td>会社社長</td>
+            <td>元大阪市議</td>
+            <td>476,351票</td>
+          </tr>
+        </tbody>
+      </table>
+  
+      <h2 id="prefecture">大阪府知事選挙</h2>
+  
+      <h3>概要</h3>
+  
+        <ul>
+          <li>投票日：2019年4月7日</li>
+          <li>投票率：49.49%</li>
+          <li>前回投票率：45.47%</li>
+          <li>事由：辞職</li>
+        </ul>
+  
+      <h3>候補者</h3>
+  
+      <table>
+        <thead>
+          <tr>
+            <th>名前</th>
+            <th>年齢</th>
+            <th>性別</th>
+            <th>所属</th>
+            <th>新・現</th>
+            <th>職業</th>
+            <th>経歴</th>
+            <th>得票</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="elected">
+            <td>吉村洋文</td>
+            <td>43歳</td>
+            <td>男性</td>
+            <td>大阪維新</td>
+            <td>新人</td>
+            <td>弁護士</td>
+            <td>元大阪市長</td>
+            <td>2,266,103票</td>
+          </tr>
+          <tr>
+            <td>小西禎一</td>
+            <td>64歳</td>
+            <td>男性</td>
+            <td>無所属</td>
+            <td>新人</td>
+            <td>団体役員</td>
+            <td>元副知事</td>
+            <td>1,254,200票</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
+```
+
+すると、（タイトル部分は若干変ですが）PCでは選挙結果が横並びになったはずです。
+
+- `raw`クラスで囲むことで一列に並び、`col-sm-6`クラスによって`sm`サイズ以上のディスプレイではそれぞれ画面の6/12ずつ使用するという形になっています。
+
+### コンポーネント
+
+`.html`の中身についてはドキュメントのコンテンツやコンポーネント、ユーティリティから実装したいものを見つけ、サンプルコードをコピー&ペーストして修正するという形になります。
+
+例えば、タイトルをいい感じにしたいので[Jumbotron](https://getbootstrap.jp/docs/4.2/components/jumbotron/)を見てみると、以下のようなサンプルコードがあります。
+
+```{}
+<div class="jumbotron">
+  <h1 class="display-4">Hello, world!</h1>
+  <p class="lead">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
+  <hr class="my-4">
+  <p>It uses utility classes for typography and spacing to space content out within the larger container.</p>
+  <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
+</div>
+```
+
+これを参考に、タイトル部分を以下のように書き換えてみます。
+
+```{}
+<div class="jumbotron">
+  <h1 class="display-4">HTML/CSS練習</h1>
+  <p class="lead">このページは2019年の大阪市長選挙および大阪府知事選挙の結果をまとめたものです。以下の情報は<a href="https://go2senkyo.com/">選挙ドットコム</a>からお借りしました。</p>
+</div>
+```
+
+ナイスな感じになったと思います。
+
+箇条書き部分をいい感じにしたいので[List group](https://getbootstrap.jp/docs/4.2/components/list-group/)を参考に次のように書き直します。
+
+```{}
+<ul class="list-group">
+  <li class="list-group-item">投票日：2019年4月7日</li>
+  <li class="list-group-item">投票率：51.7%</li>
+  <li class="list-group-item">前回投票率：50.51%</li>
+  <li class="list-group-item">事由：辞職</li>
+</ul>
+```
+
+```{}
+<ul class="list-group">
+  <li class="list-group-item">投票日：2019年4月7日</li>
+  <li class="list-group-item">投票率：49.49%</li>
+  <li class="list-group-item">前回投票率：45.47%</li>
+  <li class="list-group-item">事由：辞職</li>
+</ul>
+```
+
+いい感じになりましたが、`h3`タグとリストの間の余白がないので、`h3`タグ全てに`class = "ml-3"`をつけておきます。
+これは上部にマージンを付けるクラスで、数字の大きさに応じて余白も変わります。
+
+- マージンとパディングは違うのですがここでは割愛します。
+
+表についても[Tables](https://getbootstrap.jp/docs/4.3/content/tables/)を参考に,`table`タグに`table`クラスを付与します。
+そして、当選者の背景を赤色にするために`elected`クラスの代わりに`table-danger`というクラスに変えます。
+
+最終的には[こちら](bootstrap4.html)のようになります。
+Bootstrapなどのフレームワークを使うことで簡単にクオリティの高いウェブサイトを作成することができます。
+
+- 今回は`.css`ファイルをオンラインでインポートしていますが、より細かな調整をしたい場合はBootstrap一式をダウンロードして直接`.CSS`ファイルを編集してください。

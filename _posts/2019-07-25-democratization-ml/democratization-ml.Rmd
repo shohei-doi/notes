@@ -1,0 +1,60 @@
+---
+title: "機械学習の民主化"
+description: |
+  プログラミングをせずに機械学習をするためのソフトを紹介します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - data analysis
+  - data visualization
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+機械学習やAIを一部のエンジニアだけに独占させず、プログラミングスキルがない人でも扱えるようにしようという動きを機械学習やAIの民主化と言います（そのはずです）。
+
+僕自身は使ったことはないものの、それでも耳にするようなソフトウェアやサービスをまとめておきます。
+
+## 統計分析 {#Stats}
+
+- [HAD](http://norimune.net/had)：Excel上で統計分析ができるマクロパッケージ
+- [JAMOVI](https://www.jamovi.org/)：フリーの統計分析ソフト
+- [JASP](https://jasp-stats.org/)：フリーの統計分析ソフト（ベイジアン）
+
+## 機械学習 {#ML}
+
+- [Exploratory](https://ja.exploratory.io/)
+- [Tableau](https://www.tableau.com/ja-jp)
+
+## テキスト分析 {#Text}
+
+- [KH Coder](https://khcoder.net/)
+- [MT MineR](https://mjin.doshisha.ac.jp/MTMineR/html/menu.html)
+
+## ウェブスクレイピング {#Scraping}
+
+- [Google Spreadsheet](https://www.google.com/intl/ja_jp/sheets/about/)：実はスクレイピングができるそうです。
+
+## 企業向け {#Enterprize}
+
+- [Google Cloud AutoML](https://cloud.google.com/automl/?hl=ja)
+- [MatrixFlow](https://www.products.matrixflow.net/)

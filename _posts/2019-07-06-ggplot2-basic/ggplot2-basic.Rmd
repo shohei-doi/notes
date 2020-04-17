@@ -1,0 +1,165 @@
+---
+title: "ggplot2絵画教室：基礎編"
+description: |
+  ggplot2で基本的なグラフを作画する方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - Ubuntu
+  - setup
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+`ggplot2`は`tidyverse`に含まれるグラフ作画パッケージです。
+事実上、Rでグラフを作図する際には標準関数を使うか`ggplot2`を使うかの二択になっているかと思います。
+
+- [公式サイト](https://ggplot2.tidyverse.org/)
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+```
+
+### データの読み込み
+
+[東大・朝日共同調査](http://www.masaki.j.u-tokyo.ac.jp/utas/utasv.html)の2017年衆院選候補者のデータを使います。
+
+```{r}
+data <- read_csv("http://www.masaki.j.u-tokyo.ac.jp/utas/2017UTASP20180628.csv", 
+                 locale = locale(encoding = "shift-jis"), na = c("66", "99", "999"))
+```
+
+## 1変数の分布 {#Distribution}
+
+1つの変数の分布を見るためにヒストグラムや密度関数を描きます。
+
+### ヒストグラム
+
+年齢のような連続変数の場合はヒストグラムや密度関数を作画します。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_histogram(aes(x = AGE))
+```
+
+デフォルトの縦軸はサンプルサイズですが、密度でプロットすることもできます。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_histogram(aes(x = AGE, y = stat(density)))
+```
+
+### 密度関数
+
+カーネル密度を出力することもできます。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_density(aes(x = AGE))
+```
+
+### 棒グラフ
+
+性別のような離散変数の場合はヒストグラムよりも棒グラフのほうが適当です。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_bar(aes(x = as.factor(SEX)))
+```
+
+- 性別は離散変数ですがデータ上では`1`と`2`でコーディングされているので`as.factor()`で因子型に変換します。
+
+棒グラフで割合を出すときは自力で計算します（きっと）。
+
+```{r}
+data %>% 
+  count(SEX) %>% 
+  mutate(prop = n/sum(n)) %>% 
+  ggplot() + 
+  geom_bar(aes(x = as.factor(SEX), y = prop), stat = "identity")
+```
+
+## 2変数の分布 {#Scatter}
+
+2変数の分布を見るときは散布図などを使います。
+例えば、年齢と再選回数の関係を見ます。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_point(aes(x = AGE, y = TERM))
+```
+
+### ジッター
+
+年齢と当選の関係も見てみます。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_point(aes(x = AGE, y = RESULT))
+```
+
+選挙結果は落選、小選挙区で当選、比例で復活当選、比例で単独当選という4つのパターンに分かれます。
+このようにどちらかが離散変数の場合、同じ値を取るサンプルは重なって一点になるので、実際の数より過小評価されます。
+
+- 今回の場合、同じ年齢で同じ選挙結果の場合は重なって表示されています。
+
+このような場合はあえて小さな乱数を加えるジッターを出力します。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_jitter(aes(x = AGE, y = RESULT))
+```
+
+### テキスト
+
+政党ごとに候補者の年齢と性別の平均を見たいと思います。
+
+```{r}
+data %>% 
+  group_by(PARTY) %>% 
+  summarise(AGE = mean(AGE, na.rm = TRUE),
+            SEX = mean(SEX, na.rm = TRUE)) %>% 
+  ggplot() + 
+  geom_point(aes(x = AGE, y = SEX))
+```
+
+これくらいのサンプルサイズだと政党名を表示したくなるのが人情です。
+
+```{r}
+data %>% 
+  group_by(PARTY) %>% 
+  summarise(AGE = mean(AGE, na.rm = TRUE),
+            SEX = mean(SEX, na.rm = TRUE)) %>% 
+  ggplot() + 
+  geom_text(aes(x = AGE, y = SEX, label = PARTY))
+```
+
+- このデータ上は政党は数字でコーディングされています。

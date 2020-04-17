@@ -1,0 +1,243 @@
+---
+title: "クローリング：HTML編"
+description: |
+  RでHTMLファイルのクローリングをする方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - crawling/scraping
+  - html/css
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+クローリングとはPCに半自動的に複数のウェブサイトやオンラインのデータにアクセスをしてデータを収集することです。
+定義上はスクレイピングと異なるかもしれませんが、実践上は密接に絡み合ってると思います。
+
+今回はRでクローリングする方法について説明します。
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(lubridate)
+```
+
+## URLをループさせるクローリング {#URL}
+
+試しに、[報道Stationの世論調査](https://www.tv-asahi.co.jp/hst/poll/)から政権支持率のデータをクローリングしてみます。
+もし、複数のページにおいて`.html`ファイルの構造が同じであれば、ループで異なるURLを読み込んで同じ操作をすればいいはずです。
+
+### 下調べ
+
+まず、[2019年3月のページ](https://www.tv-asahi.co.jp/hst/poll/201903/index.html)を見て、支持率が一番上にあるのがわかります。
+インスペクタで調べてみると`data`クラスの中の`dd`タグの`em`タグに各回答の割合があるように見えます。
+
+```{r}
+html <- read_html("https://www.tv-asahi.co.jp/hst/poll/201903/index.html")
+html %>% 
+  html_nodes(".data dd em") %>% 
+  html_text()
+```
+
+同様のことを、[2012年1月のページ](https://www.tv-asahi.co.jp/hst_archive/poll/201201/index.html)で見てみるとうまくいきません。
+
+```{r}
+html <- read_html("https://www.tv-asahi.co.jp/hst/poll/201201/index.html")
+```
+
+URLで`hst`だったところが、`hst_archive`になっているのがわかります。
+URLを正しく入力するとうまくいきました。
+
+```{r}
+html <- read_html("https://www.tv-asahi.co.jp/hst_archive/poll/201201/index.html")
+html %>% 
+  html_nodes(".data dd em") %>% 
+  html_text()
+```
+
+いろいろ調べていると2017年以前は`hst_archive`に、2018年以降は`hst`にあることがわかります。
+
+### ループを書く
+
+下調べはここまでです。
+各ページからどのように情報を抜き出せばいいのか、そして各ページのURLがどうなっているのかは見当がつきました。
+
+そこで、ループを書いていくのですが、どの箇所をループすべきなのでしょうか。
+今回の場合はURLの年と月の箇所になります。
+
+- 例えば2012年1月であれば`201201`、2019年3月であれば`201903`となっている箇所です。
+
+そこで、まずは年と月の変数を作成します。
+今回は諸事情があって2016年1月から2019年3月までのデータを取得するとします。
+
+```{r}
+year <- 2016:2019
+month <- 1:12
+```
+
+そして、それぞれの値に関してループを書きます。
+まず、最初の`i`に関するループで各年を、その中の`j`に関するループで各月を指定します。
+
+```{r}
+data <- NULL
+for (i in year) {
+  for (j in month) {
+    if (i <= 2017) {
+      url <- str_c("https://www.tv-asahi.co.jp/hst_archive/poll/", 100*i+j,"/index.html")
+    } else {
+      url <- str_c("https://www.tv-asahi.co.jp/hst/poll/", 100*i+j,"/index.html")
+    }
+    if (100*i + j > 201903) {
+      break
+    }
+    html <- read_html(url)
+    x <- html %>% 
+      html_nodes(".data dd em") %>% 
+      html_text()
+    data <- bind_rows(data, 
+                      tibble(year = i,
+                             month = j,
+                             support = x[1] %>% 
+                               parse_number()))
+  }
+}
+data
+```
+
+具体的にコードを見ていきます。
+
+1. 最初の`if`文ですが、これは2017年以前と2018年以後でURの一部が違うため、分岐させています。
+1. `if`文の中で`str_c()`という関数がありますが、これは文字列を接続する関数です。
+1. 2つ目の`if`文は2019年4月以降のデータはないのでそこまで来ると`break`によってループを停止します。
+1. その後では、実際に`html`として`.html`ファイルを読み込み、支持率データを`x`として抜き出しています。
+1. 最後に、新しいデータを作成し、`data`に結合しています。
+    1. `i`は年を`j`は月を表しています。
+    1. `x`のうちの先頭が内閣支持率で、そこから数値を抜き出しています。
+
+## リンクから辿るクローリング {#Link}
+
+2015年以前のデータを取らなかった諸事情ですが、[2014年](https://www.tv-asahi.co.jp/hst_archive/poll/2014.html)には11回しか世論調査が行われていなかったり、[2015年](https://www.tv-asahi.co.jp/hst_archive/poll/2015.html)には9月に2回行われたりしています。
+このような不規則な事態がある場合はそれに応じてコードを書き直したり、条件分岐させる必要があります。
+
+- 言い換えれば、できる限り規則的なパターンを見つけ出すことがクローリングのコツになります。
+
+### 下調べ
+
+この問題に対処するために、まずは各年のページに飛び、そこから各月の世論調査のページへのリンクをスクレイプしてから各世論調査のページに飛ぶという方法を考えます。
+
+[2019年のページ](https://www.tv-asahi.co.jp/hst/poll/2019.html)にいくと`id`が`listCnt`である`ul`タグの中の`a`タグにリンク情報があるのがわかります。
+
+```{r}
+html <- read_html("https://www.tv-asahi.co.jp/hst/poll/2019.html")
+html %>% 
+  html_nodes("ul#listCnt a") %>% 
+  html_attr("href")
+```
+
+同じことを[2012年のページ](https://www.tv-asahi.co.jp/hst_archive/poll/2012.html)でも確認します。
+
+```{r}
+html <- read_html("https://www.tv-asahi.co.jp/hst_archive/poll/2012.html")
+html %>% 
+  html_nodes("ul#listCnt a") %>% 
+  html_attr("href")
+```
+
+ここまで来ると調査日も知りたくなるのが人情です。
+調査日は`date_poll`クラスの`span`タグの中にあります。
+
+```{r}
+html <- read_html("https://www.tv-asahi.co.jp/hst/poll/2019.html")
+html %>% 
+  html_nodes("span.date_poll") %>% 
+  html_text()
+```
+
+調査日が2日間に渡っていて面倒くさいので初日だけを抜き出します。
+`lubridate`で扱える形にしたいので、例えば`2019年4月20`のように取り出して、`ymd()`で日付データに変換します。
+
+```{r}
+html %>% 
+  html_nodes("span.date_poll") %>% 
+  html_text() %>% 
+  str_extract("[0-9]+年[0-9]+月[0-9]+") %>% 
+  ymd()
+```
+
+### ループを書く
+
+基本的な発想は先ほどと同じです。
+今度は`i`で各年をループしてリンクと日付情報をスクレイプし、`j`で各リンク先の情報をスクレイプしていきます。
+
+```{r}
+year <- 2012:2019
+data <- NULL
+for (i in year) {
+  if (i <= 2017) {
+    url <- "https://www.tv-asahi.co.jp/hst_archive/poll/"
+  } else {
+    url <- "https://www.tv-asahi.co.jp/hst/poll/"
+  }
+  html <- str_c(url, i, ".html") %>% 
+    read_html()
+  links <- html %>% 
+    html_nodes("ul#listCnt a") %>% 
+    html_attr("href")
+  dates <- html %>% 
+    html_nodes("span.date_poll") %>% 
+    html_text() %>% 
+    str_extract("[0-9]+年[0-9]+月[0-9]+") %>% 
+    ymd()
+  for (j in 1:length(links)) {
+    html <- str_c(url, links[j]) %>% 
+      read_html()
+    x <- html %>% 
+      html_nodes(".data dd em") %>% 
+      html_text()
+    data <- bind_rows(data, 
+                      tibble(date = dates[j],
+                             support = x[1] %>% 
+                               parse_number()))
+  }
+}
+```
+
+ポイントをいくつか見ていきます。
+
+1. まず、年によって`hst`か`hst_archive`か違うので条件分岐をさせます。
+    1. 今度はリンクを辿っていくので、リンクが存在しないページについて考える必要はありません。
+1. 各年のページを読み込み、リンク先と調査日をスクレイプします。
+1. 次に各調査ページにアクセスしてスクレイプしますが、ここで`j`を`links`で回さずに`1:length(links)`（つまり`1`からリンクの数まで）で回しておきます。
+    1. 各調査ページを読み込み、調査結果を`x`として保存します。
+    1. そして支持率を`support`、調査日を`date`とするデータフレームを作成し、`data`に結合してきます。
+    1. ここで、`j`を数字で回すことで対応する調査日を`date[j]`として取り出すことができます。
+
+行数が世論調査の回数と一致しているので、ちゃんとデータが取れたようです。
+
+```{r}
+data
+```
+
+- 実際には直接データの中身を見て、問題がないか確認したほうがいいです。

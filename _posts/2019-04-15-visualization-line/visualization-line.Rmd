@@ -1,0 +1,178 @@
+---
+title: "データの可視化：時系列"
+description: |
+  Rで変数の時系列変化を可視化する方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: 04-15-2019
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - data visualization
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+ある変数がどのように分布しているのかを示すための図を作ります。
+具体的には折れ線グラフ、エラーバーについて説明します。
+
+基本的に
+
+- 標準作図関数
+- `tidyverse`の`ggplot2`
+- インタラクティブな図を作成する`plotly`
+
+による方法を説明します。
+
+<aside>
+  一番使うのは`ggplot2`なので、詳しくなります。
+</aside>
+
+### 必要なパッケージの読み込み
+
+```{r}
+library(tidyverse)
+library(plotly)
+```
+
+### データセットの読み込み
+
+[国レベルのパネルデータ](dara/state_year.csv)を使います。
+
+```{r}
+data <- read.csv("data/state_year.csv")
+str(data)
+```
+
+さらに、今回はそのデータの中で名目軍事支出`milex_cur`の各年における中央値と2.5%分位点および97.5%分位点を使うこととします。
+
+```{r}
+data <- data %>% 
+  group_by(year) %>% 
+  drop_na(milex_cur) %>% 
+  summarise(median = median(milex_cur),
+            low = quantile(milex_cur, 0.25),
+            high = quantile(milex_cur, 0.975))
+head(data)
+```
+
+
+## 標準作図関数
+
+Rで標準に備わっている作図関数を使います。
+
+### 折れ線グラフ
+
+`plot()`で書くときはオプション`type = "l"`とします。
+
+```{r}
+plot(data$year, data$median, type = "l")
+```
+
+データによらない直線は`abline()`で作図します。
+特に水平線や垂直線は次のように記述します。
+
+```{r}
+plot(data$year, data$median, type = "l")
+abline(v = 1990)
+abline(h = median(data$median))
+```
+
+## ggplot2
+
+`tidyverse`の中の`ggplot2`というパッケージを使って作図します。
+`ggplot2`では
+
+1. `ggplot()`という関数でオブジェクトを作成し、
+3. `+`で適当なグラフを重ね合わせていき、
+1. 適宜、`aes()`で使用する変数を指定する、
+
+という流れになります。
+
+<aside>
+  `%>%`と`+`を間違えることがあります。
+</aside>
+
+### 折れ線グラフ
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = median))
+```
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = median)) + 
+  geom_vline(aes(xintercept = 1990)) + 
+  geom_hline(aes(yintercept = median(median)))
+```
+
+### エラーバー
+
+ある範囲があるとき（今回は2.5%と9.75%の分位点）はエラーバーやリボンを使います。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = median)) + 
+  geom_errorbar(aes(x = year, ymin = low, ymax = high))
+```
+
+このような場合はy軸に対数を取ります。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = median)) + 
+  geom_errorbar(aes(x = year, ymin = low, ymax = high)) + 
+  scale_y_log10()
+```
+
+このようなこともできます。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_pointrange(aes(x = year, y = median, ymin = low, ymax = high)) + 
+  scale_y_log10()
+```
+
+リボンも書けますが、`alpha`で透過度を調整する必要があります。
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_line(aes(x = year, y = median)) + 
+  geom_ribbon(aes(x = year, ymin = low, ymax = high), alpha = 0.3) + 
+  scale_y_log10()
+```
+
+## plotly
+
+`plotly`はインタラクティブな作図をする[Plotly](https://plot.ly/feed/#/)を使うパッケージです。
+
+### 折れ線グラフ
+
+```{r}
+data %>% 
+  plot_ly(x = ~year, y = ~log(median), mode = "lines")
+```

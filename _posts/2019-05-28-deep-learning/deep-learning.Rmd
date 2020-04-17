@@ -1,0 +1,376 @@
+---
+title: "Rで機械学習：深層学習編"
+description: |
+  Rで深層学習を行う方法を説明します。
+author:
+  - name: 土井　翔平
+    affiliation: 国立情報学研究所
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    toc_depth: 2
+categories:
+  - R
+  - data analysis
+twitter:
+  creator: "@sdoi0504"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning = TRUE,
+  message = TRUE,
+  R.options = list(width = 100)
+)
+```
+
+## はじめに {#Intro}
+
+深層学習あるいはディープラーニングはDeep Neural Networkと呼ばれるように、[ニューラルネット](https://shohei-doi.github.io/notes/posts/2019-05-20-classification/#NNet)を発展させたものになります。
+つまり、ニューラルネットでは一つしかなかった中間層を多層化したのがDNNになります。
+
+[Tensorflow](https://www.tensorflow.org/)とはGoogleの開発した機械学習プラットフォームで、[Keras](https://keras.io/)はTensorflowをバックエンドにもつ深層学習用のPythonのパッケージになります。
+今回は[R上でKerasを経由してTensorflowを使って](https://tensorflow.rstudio.com/keras/)深層学習を行ってみます。
+
+### 必要なパッケージのインストール
+
+まず、インストールしていない人は`devtools`をインストールします。
+
+```{r eval = FALSE}
+install.packages("devtools")
+```
+
+続いて、Rのパッケージとしてのkeras`をインストールします。
+
+```{r eval = FALSE}
+devtools::install_github("rstudio/keras")
+```
+
+最後に、Keras本体をインストールします。
+
+```{r eval = FALSE}
+keras::install_keras()
+```
+
+- Pythonを入れていない人は必要な操作に関するメッセージが流れると思います。
+
+### 必要なパッケージの読み込み
+
+前回同様、`tidyverse`と`caret`も使います。
+
+```{r}
+library(tidyverse)
+library(caret)
+library(keras)
+```
+
+### 必要なデータの読み込みと下ごしらえ
+
+例のごとく、[東大・朝日共同調査](http://www.masaki.j.u-tokyo.ac.jp/utas/utasv.html)の2014年衆院選・2016年参院選世論調査のデータを使います。
+
+- 各コードで何をしているのかは前回を参照してください。
+
+```{r}
+data <- read_csv("http://www.masaki.j.u-tokyo.ac.jp/utas/2014_2016UTASV20161004.csv", 
+                 locale = locale(encoding = "shift-jis"), na = c("66", "99", "999"))%>% 
+  select(vote = W1Q1,
+         party = W1Q2,
+         sex = W1F1,
+         age = W1F2,
+         educ = W1F3,
+         job = W1F4,
+         W1Q7, W1Q8, W1Q9, W1Q10, W1Q11, W1Q12, W1Q13, W1Q14_1,
+         W1Q15_1, W1Q15_2, W1Q15_3, W1Q15_4, W1Q15_5, W1Q15_6, 
+         W1Q15_7, W1Q15_8, W1Q15_9, W1Q15_10, W1Q15_11, 
+         W1Q16_1, W1Q16_2, W1Q16_3, W1Q16_4, W1Q16_5, W1Q16_6, 
+         W1Q16_7, W1Q16_8, W1Q16_9, W1Q16_10, W1Q16_11, 
+         W1Q16_12, W1Q16_13, W1Q16_14, W1Q16_15, W1Q16_16, W1Q16_17,
+         W1Q17_1, W1Q17_2, W1Q17_3, W1Q17_4, W1Q17_5, W1Q17_6, 
+         W1Q17_7, W1Q17_8, W1Q17_9, W1Q17_10, 
+         W1Q18_1, W1Q19_1,
+         W1Q20_1, W1Q20_2, W1Q20_3, W1Q20_4, W1Q20_5, W1Q20_6, W1Q20_7)%>% 
+  mutate(vote = vote - 1,
+         party = as.factor(party),
+         sex = as.factor(sex),
+         educ = as.factor(educ),
+         job = as.factor(job))
+```
+
+今回は、投票するかどうかを予測するデータセットのみを使います。
+
+### シード値の設定
+
+いくつかの分析手法では乱数を用います。
+その名の通り乱数は毎回違う値が出てくるので、分析結果も変わってきます。
+
+そこで、乱数を発生させるときの基準となるシード値を設定することで、毎回同じ乱数が発生するようにします。
+
+```{r}
+set.seed(334)
+```
+
+## 深層学習による投票行動の予測 {#Vote}
+
+まずは、投票に行くかどうかを深層学習によって予測します。
+投票に行くかどうかを`target`として、投票先を取り除いたデータを作ります。
+そして、`caret`を使って訓練データと検証データに分けるためのインデックスを求めます。
+
+```{r}
+data_vote <- data %>% 
+  rename(target = vote) %>% 
+  select(-party) %>% 
+  drop_na()
+ind_train <- createDataPartition(y = data_vote$target, p = 0.75, list = FALSE)
+```
+
+続いて、因子型になっている性別、学歴、職業をダミー変数に変換します。
+そして、訓練データと検証データに分けます。
+
+```{r}
+data_vote_dummy <- dummyVars(~ ., data = data_vote)
+data_vote <- predict(data_vote_dummy, data_vote) %>% 
+  as_tibble()
+data_train <- data_vote[ind_train,]
+data_test <- data_vote[-ind_train,]
+```
+
+Kerasでは入力引数は目的変数と特徴量の行列なので、それぞれ訓練データと検証データについて作成します。
+
+```{r}
+y_train <- data_train %>% 
+  select(contains("target")) %>% 
+  as.matrix()
+y_test <- data_test %>% 
+  select(contains("target")) %>% 
+  as.matrix()
+x_train <- data_train %>% 
+  select(-contains("target")) %>% 
+  as.matrix()
+x_test <- data_test %>% 
+  select(-contains("target")) %>% 
+  as.matrix()
+```
+
+特徴量行列の列数を見て入力層の数を確認します。
+
+```{r}
+ncol(x_train)
+```
+
+`keras_model_sequential()`でモデルを初期化し、各レイヤーを定義していきます。
+
+- 最初の層では`input_shape`で入力する変数の数を指定します。
+- `activation`とは次のレイヤーに変数を送る際の変換方法を意味しています。
+    - とりあえず出力層以外は`relu`でいいと思います。
+    - 出力層は今回はバイナリ変数なので`sigmoid`を選びます。
+- 各レイヤーの`units`はノードの数になります。
+- `dropout`というのは全てのノードを使うのではなく、ランダムに一定の割合のノードだけを使って学習する方法です。
+    - これにより、過学習の可能性が低下すると考えられています。
+
+```{r}
+model_vote <- keras_model_sequential()
+model_vote %>% 
+  layer_dense(units = 256, activation = "relu", input_shape = c(74)) %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 128, activation = "relu") %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 64, activation = "relu") %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 32, activation = "relu") %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 1, activation = "sigmoid")
+```
+
+続いて、定義したモデルをコンパイルします。
+
+- `loss`とは学習において最小化する損失関数の種類になります。
+    - バイナリ変数が出力なので`binary_crossentoropy`を選択します。
+- `optimizer`とは損失関数を最小化するためのアルゴリズムになります。
+    - いろいろありますが、とりあえずよく名前を聞くAdamを使います。
+- `metrics`は予測精度の種類を指定します。
+    - 今回はバイナリ変数なので的中率を採用します。
+
+```{r}
+model_vote %>% 
+  compile(loss = "binary_crossentropy",
+          optimizer = optimizer_adam(),
+          metrics = c("accuracy"))
+```
+
+コンパイルしたモデルをデータにフィットさせます。
+
+- `epochs`とは学習を繰り返す回数です。
+- `batch_size`とは一回の学習で使用するデータの数です。
+    - 全部のデータを一度に使わないことで過学習の可能性を低くすると考えられています。
+- `validation_split`は学習における評価を行うデータの割合です。
+
+```{r}
+history <- model_vote %>% 
+  fit(x_train, y_train,
+      epochs = 30,
+      batch_size = 100,
+      validation_split = 0.2)
+```
+
+学習過程を可視化します。
+
+```{r}
+plot(history)
+```
+
+検証データで予測精度を求めます。
+
+```{r}
+model_vote %>% evaluate(x_test, y_test)
+```
+
+深層学習ではハイパーパラメータの種類が非常に多いのでいろいろなチューニングを試す必要がありそうです。
+
+## 深層学習による投票先の予測 {#Party}
+
+続いて、どの政党に投票するかを予測します。
+概ね、先ほどと同じコードなので相違点だけ言及します。
+
+`target`を`vote`ではなく`party`にします。
+
+```{r}
+data_party <- data %>% 
+  rename(target = party) %>% 
+  select(-vote) %>% 
+  drop_na()
+ind_train <- createDataPartition(y = data_party$target, p = 0.75, list = FALSE)
+```
+
+```{r}
+data_party_dummy <- dummyVars(~ ., data = data_party)
+data_party <- predict(data_party_dummy, data_party) %>% 
+  as_tibble()
+data_train <- data_party[ind_train,]
+data_test <- data_party[-ind_train,]
+```
+
+```{r}
+y_train <- data_train %>% 
+  select(contains("target")) %>% 
+  as.matrix()
+y_test <- data_test %>% 
+  select(contains("target")) %>% 
+  as.matrix()
+```
+
+```{r}
+x_train <- data_train %>% 
+  select(-contains("target")) %>% 
+  as.matrix()
+x_test <- data_test %>% 
+  select(-contains("target")) %>% 
+  as.matrix()
+```
+
+```{r}
+ncol(x_train)
+```
+
+出力層のノード数を`10`にして、`activation`を`softmax`にします。
+
+```{r}
+model_party <- keras_model_sequential()
+model_party %>% 
+  layer_dense(units = 256, activation = "relu", input_shape = c(74)) %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 128, activation = "relu") %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 64, activation = "relu") %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 32, activation = "relu") %>% 
+  layer_dropout(rate = 0.2) %>% 
+  layer_dense(units = 10, activation = "softmax")
+```
+
+損失関数を`categorical_crossentoropy`にします。
+
+```{r}
+model_party %>% 
+  compile(loss = "categorical_crossentropy",
+          optimizer = optimizer_sgd(),
+          metrics = c("accuracy"))
+```
+
+```{r}
+history <- model_party %>% 
+  fit(x_train, y_train,
+      epochs = 30,
+      batch_size = 100,
+      validation_split = 0.2)
+```
+
+```{r}
+plot(history)
+```
+
+```{r}
+model_party %>% evaluate(x_test, y_test)
+```
+
+精度はまずまずといったところでしょうか。
+
+### エポック数の増加
+
+もう少し`epoch`数を増やしても良さそうです。
+
+```{r}
+history <- model_party %>% 
+  fit(x_train, y_train,
+      epochs = 100,
+      batch_size = 100,
+      validation_split = 0.2)
+```
+
+```{r}
+plot(history)
+```
+
+```{r}
+model_party %>% evaluate(x_test, y_test)
+```
+
+### 過学習
+
+今回のデータはサンプルサイズも変数の数も少ないのでドロップアウトやバッチ学習はいらないのかもしれません。
+
+```{r}
+model_party <- keras_model_sequential()
+model_party %>% 
+  layer_dense(units = 256, activation = "relu", input_shape = c(74)) %>% 
+  layer_dense(units = 128, activation = "relu") %>% 
+  layer_dense(units = 64, activation = "relu") %>% 
+  layer_dense(units = 32, activation = "relu") %>% 
+  layer_dense(units = 10, activation = "softmax")
+
+model_party %>% 
+  compile(loss = "categorical_crossentropy",
+          optimizer = optimizer_sgd(),
+          metrics = c("accuracy"))
+
+history <- model_party %>% 
+  fit(x_train, y_train,
+      epochs = 30,
+      validation_split = 0.2)
+```
+
+```{r}
+plot(history)
+```
+
+```{r}
+model_party %>% evaluate(x_test, y_test)
+```
+
+最初の学習に比べると予測精度が改善しましたが、過学習気味です。
+しかし、投票行動のデータでやると過学習を起こしている疑いがありました。
+
+（シード値を設定していても毎回結果が変わっているので、何か間違えている可能性があります）
