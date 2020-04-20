@@ -987,13 +987,13 @@
 <li>RStudioのバージョンは1.1.463</li>
 </ul>
 <p>です。</p>
-<h3>参考になるサイト</h3>
+<h3 id="参考になるサイト">参考になるサイト</h3>
 <ul>
 <li>高知工科大学の矢内勇生先生の<a href="http://yukiyanai.github.io/jp/classes/econometrics1/contents/">計量経済学（2018年度）</a>と<a href="http://yukiyanai.github.io/jp/classes/econometrics2/contents/">計量経済学応用（2018年度）</a>の講義ページ</li>
 <li>拓殖大学の浅野正彦先生の<a href="https://www.asanoucla.com/%E8%AC%9B%E7%BE%A9%E4%B8%80%E8%A6%A7/keiryo2017/">計量政治学01（2018年度）</a>の講義ページ</li>
 </ul>
 <h2 id="Install-R">Rの導入</h2>
-<h3>ダウンロード</h3>
+<h3 id="ダウンロード">ダウンロード</h3>
 <p>まずはRの<a href="https://www.r-project.org/">公式サイト</a>へ行き（右クリックで新しいタブで開くことができます）、<code>download R</code>をクリックします。</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="figures/R1.jpg" /><!-- --></p>
@@ -1018,7 +1018,7 @@
 <aside>
 どのフォルダにダウンロードするのか選択できない場合はブラウザの設定で選択できるようにしておきましょう。
 </aside>
-<h3>インストール</h3>
+<h3 id="インストール">インストール</h3>
 <p>Rをダウンロードしたフォルダを開き、ファイルをクリックします。</p>
 <aside>
 ファイル名はOSによって異なります。
@@ -1032,45 +1032,45 @@
 英語のエラーメッセージで検索したほうが解決策が見つけやすくなります。
 </aside>
 <h2 id="Install-RStudio">RStudioの導入</h2>
-<h3 id="-1">ダウンロード</h3>
+<h3 id="ダウンロード-1">ダウンロード</h3>
 <p>RStudioの<a href="https://www.rstudio.com/">公式サイト</a>からRStudioのダウンロードサイトへ行きます。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio1.jpg" /><!-- --></p>
+
 </div>
 <p>下の方にインストーラーをダウンロードするリンクがあるのでOSに応じたものを選択します。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio2.jpg" /><!-- --></p>
+
 </div>
 <ul>
 <li>安定版ではないけれど最新のRStudioを使いたい人は<a href="https://www.rstudio.com/products/rstudio/download/preview/">RStudio Preview</a>をインストールしてください。</li>
 <li>また、RやRStudioをインストールせずにオンラインで使用できる<a href="https://rstudio.cloud/">RStudio Cloud</a>というものもあります。</li>
 </ul>
-<h3 id="-1">インストール</h3>
+<h3 id="インストール-1">インストール</h3>
 <p>あとはダウンロードしたフォルダに移り、インストーラーを起動して表示されるがままに進めていきます。</p>
 <h2 id="Setup">RStudioの設定</h2>
 <p>RStudioを初めて起動すると次のような表示になるとはずです。 左側の大きなパネルで<code>R</code>が表示されていればインストールの成功です。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio3.jpg" /><!-- --></p>
+
 </div>
-<h3>設定*</h3>
+<h3 id="設定">設定*</h3>
 <p><code>Tools &gt; Global Options</code>を開き、<code>Genral</code>の中で以下のチェックを外します。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio4.jpg" /><!-- --></p>
+
 </div>
 <ul>
 <li>平たく言うとRStudioを起動したときに前回の続きが残っていない真っさらな状態にしておきます。</li>
 </ul>
 <p>また、<code>Appearance</code>ではフォントや背景・ハイライトの色を変えることができます。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio5.jpg" /><!-- --></p>
+
 </div>
 <p>ダークな背景を選択するとRStudio全体もダークテーマになります。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio6.jpg" /><!-- --></p>
+
 </div>
 <p>日本語がしばしば文字化けすることがあります。 なぜならWindowsではShift-JIS、LinuxとMacではUTF-8と呼ばれるエンコーディング（平たく言うとPCが文字を表示する方法）形式だからです。 UTF-8が世界的に使われているので、<code>Code &gt; Saving &gt; Default text encoding</code>を<code>UTF-8</code>にしておきます。</p>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="figures/Rstudio7.jpg" /><!-- --></p>
+
 </div>
 <p>もし、日本語を含むファイルをRStudioで開いたときに文字化けしている場合、Windowsを使っている人はUTF-8のファイルをShift-JISで開いたということなので、<code>File &gt; Reopen with Encoding</code>で<code>UTF-8</code>を選択します。</p>
 <p>逆にMacの場合はShift-JISのファイルをUTF-8で開いているので同様に<code>Shift-JIS</code>で開きます。</p>
