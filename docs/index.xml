@@ -7,7 +7,16 @@
     <description>ノート
 </description>
     <generator>Distill</generator>
-    <lastBuildDate>Tue, 24 Mar 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 23 Apr 2020 00:00:00 +0000</lastBuildDate>
+    <item>
+      <title>データの可視化：地図</title>
+      <dc:creator>土井　翔平</dc:creator>
+      <link>https://shohei-doi.github.io/notes/posts/2019-11-29-map</link>
+      <description>Rで地図や空間データのグラフを作成する方法を紹介します。</description>
+      <guid>https://shohei-doi.github.io/notes/posts/2019-11-29-map</guid>
+      <pubDate>Thu, 23 Apr 2020 00:00:00 +0000</pubDate>
+      <media:content url="https://shohei-doi.github.io/notes/posts/2019-11-29-map/map_files/figure-html5/unnamed-chunk-4-1.png" medium="image" type="image/png" width="1248" height="768"/>
+    </item>
     <item>
       <title>Ubuntuのセットアップ</title>
       <dc:creator>土井　翔平</dc:creator>
@@ -31,15 +40,6 @@
       <description>RでMeCabによって分かち書きをしてQuantedaで分析できるようにします。</description>
       <guid>https://shohei-doi.github.io/notes/posts/2020-01-16-r-mecab</guid>
       <pubDate>Thu, 16 Jan 2020 00:00:00 +0000</pubDate>
-    </item>
-    <item>
-      <title>データの可視化：地図</title>
-      <dc:creator>土井　翔平</dc:creator>
-      <link>https://shohei-doi.github.io/notes/posts/2019-11-29-map</link>
-      <description>Rで地図や空間データのグラフを作成する方法を紹介します。</description>
-      <guid>https://shohei-doi.github.io/notes/posts/2019-11-29-map</guid>
-      <pubDate>Sat, 30 Nov 2019 00:00:00 +0000</pubDate>
-      <media:content url="https://shohei-doi.github.io/notes/posts/2019-11-29-map/map_files/figure-html5/unnamed-chunk-4-1.png" medium="image" type="image/png" width="1248" height="768"/>
     </item>
     <item>
       <title>機械学習の民主化</title>

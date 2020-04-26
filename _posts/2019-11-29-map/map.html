@@ -25,8 +25,8 @@
   
   
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2019-11-30"/>
-  <meta property="article:created" itemprop="dateCreated" content="2019-11-30"/>
+  <meta property="article:published" itemprop="datePublished" content="2020-04-24"/>
+  <meta property="article:created" itemprop="dateCreated" content="2020-04-24"/>
   <meta name="article:author" content="土井　翔平"/>
   
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -45,7 +45,7 @@
   <!--radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","output","categories","twitter"]}},"value":[{"type":"character","attributes":{},"value":["データの可視化：地図"]},{"type":"character","attributes":{},"value":["Rで地図や空間データのグラフを作成する方法を紹介します。\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation"]}},"value":[{"type":"character","attributes":{},"value":["土井　翔平"]},{"type":"character","attributes":{},"value":["国立情報学研究所"]}]}]},{"type":"character","attributes":{},"value":["2019-11-30"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","toc_depth"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"integer","attributes":{},"value":[2]}]}]},{"type":"character","attributes":{},"value":["data analysis","data visualization"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["creator"]}},"value":[{"type":"character","attributes":{},"value":["@sdoi0504"]}]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","output","categories","twitter"]}},"value":[{"type":"character","attributes":{},"value":["データの可視化：地図"]},{"type":"character","attributes":{},"value":["Rで地図や空間データのグラフを作成する方法を紹介します。\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","affiliation"]}},"value":[{"type":"character","attributes":{},"value":["土井　翔平"]},{"type":"character","attributes":{},"value":["国立情報学研究所"]}]}]},{"type":"character","attributes":{},"value":["2020-04-24"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","toc_depth"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"integer","attributes":{},"value":[2]}]}]},{"type":"character","attributes":{},"value":["data analysis","data visualization"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["creator"]}},"value":[{"type":"character","attributes":{},"value":["@sdoi0504"]}]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   
@@ -943,7 +943,7 @@
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"データの可視化：地図","description":"Rで地図や空間データのグラフを作成する方法を紹介します。","authors":[{"author":"土井　翔平","authorURL":"#","affiliation":"国立情報学研究所","affiliationURL":"#"}],"publishedDate":"2019-11-30T00:00:00.000+09:00","citationText":"翔平, 2019"}
+{"title":"データの可視化：地図","description":"Rで地図や空間データのグラフを作成する方法を紹介します。","authors":[{"author":"土井　翔平","authorURL":"#","affiliation":"国立情報学研究所","affiliationURL":"#"}],"publishedDate":"2020-04-24T00:00:00.000+09:00","citationText":"翔平, 2020"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -960,7 +960,7 @@
 <div class="d-byline">
   土井　翔平  (国立情報学研究所)
   
-<br/>2019-11-30
+<br/>2020-04-24
 </div>
 
 <div class="d-article">
@@ -982,16 +982,16 @@
 <pre class="r"><code>
 library(tidyverse)</code></pre>
 <pre><code>
-── Attaching packages ───────────────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+── Attaching packages ────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
 <pre><code>
-✔ ggplot2 3.2.1     ✔ purrr   0.3.3
-✔ tibble  2.1.3     ✔ dplyr   0.8.3
-✔ tidyr   1.0.0     ✔ stringr 1.4.0
-✔ readr   1.3.1     ✔ forcats 0.4.0</code></pre>
+✓ ggplot2 3.3.0     ✓ purrr   0.3.4
+✓ tibble  3.0.1     ✓ dplyr   0.8.5
+✓ tidyr   1.0.2     ✓ stringr 1.4.0
+✓ readr   1.3.1     ✓ forcats 0.5.0</code></pre>
 <pre><code>
-── Conflicts ──────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-✖ dplyr::filter() masks stats::filter()
-✖ dplyr::lag()    masks stats::lag()</code></pre>
+── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()</code></pre>
 <pre class="r"><code>
 library(maps)</code></pre>
 <pre><code>
@@ -1077,7 +1077,7 @@ head(jpnprefs)</code></pre>
 <pre><code>
 # A tibble: 6 x 11
   jis_code prefecture capital region major_island prefecture_en capital_en region_en major_island_en
-  &lt;chr&gt;    &lt;chr&gt;      &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt;        &lt;chr&gt;         &lt;chr&gt;      &lt;chr&gt;     &lt;chr&gt;          
+  &lt;chr&gt;    &lt;fct&gt;      &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt;        &lt;chr&gt;         &lt;chr&gt;      &lt;chr&gt;     &lt;chr&gt;          
 1 01       北海道     札幌市  北海道 北海道       Hokkaido      Sapporo-s… Hokkaido  Hokkaido       
 2 02       青森県     青森市  東北   本州         Aomori-ken    Aomori-shi Tohoku    Honshu         
 3 03       岩手県     盛岡市  東北   本州         Iwate-ken     Morioka-s… Tohoku    Honshu         
@@ -1096,16 +1096,15 @@ Simple feature collection with 6 features and 4 fields
 geometry type:  POLYGON
 dimension:      XY
 bbox:           xmin: 135.6469 ymin: 34.96986 xmax: 135.8608 ymax: 35.32086
-epsg (SRID):    4326
-proj4string:    +proj=longlat +datum=WGS84 +no_defs
+CRS:            EPSG:4326
 # A tibble: 6 x 5
   pref_code prefecture city_code city                                                       geometry
   &lt;chr&gt;     &lt;chr&gt;      &lt;chr&gt;     &lt;chr&gt;                                                 &lt;POLYGON [°]&gt;
-1 26        京都府     26101     京都市 北区… ((135.7254 35.1709, 135.7309 35.16995, 135.7341 35.16225…
+1 26        京都府     26101     京都市 北区… ((135.7254 35.17089, 135.7309 35.16995, 135.7341 35.1622…
 2 26        京都府     26102     京都市 上京区… ((135.7507 35.03831, 135.7643 35.03754, 135.7699 35.0327…
-3 26        京都府     26103     京都市 左京区… ((135.8048 35.31718, 135.8088 35.31697, 135.8111 35.3140…
-4 26        京都府     26104     京都市 中京区… ((135.7319 35.02261, 135.7358 35.0189, 135.7412 35.02008…
-5 26        京都府     26105     京都市 東山区… ((135.7847 35.01045, 135.7912 35.00916, 135.7869 35.0056…
+3 26        京都府     26103     京都市 左京区… ((135.8048 35.31718, 135.8088 35.31696, 135.8111 35.3140…
+4 26        京都府     26104     京都市 中京区… ((135.7319 35.0226, 135.7357 35.01889, 135.7412 35.02008…
+5 26        京都府     26105     京都市 東山区… ((135.7847 35.01044, 135.7912 35.00916, 135.7868 35.0056…
 6 26        京都府     26106     京都市 下京区… ((135.7702 35.00438, 135.7716 35.00361, 135.7674 34.9927…</code></pre>
 </div>
 <p>今回は市区町村の境界線がsimple features (sf)と呼ばれる規格なので、<code>geom_sf()</code>を使います。</p>
@@ -1142,18 +1141,36 @@ pop2013 &lt;- population %&gt;%
 <ul>
 <li><code>population</code>では国名が<code>country</code>ですが、<code>world</code>では<code>region</code>なので、<code>rename()</code>で後者に合わせます。</li>
 </ul>
-<p>先程のデータと<code>world</code>をマージして、<code>aes()</code>の中の<code>fill</code>で塗り分けする変数を指定します。</p>
+<p>先程のデータと<code>world</code>をマージして、<code>aes()</code>の中の<code>fill</code>で塗り分けする変数を指定します。 それぞれのデータセットで国名が異なっているので、<code>coutnrycode</code>というパッケージでISOコードに合わせます。</p>
+<ul>
+<li><a href="https://dainachiba.github.io/">千葉大奈先生</a>にご指摘いただきました。</li>
+</ul>
 <div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+pop2013 &lt;- pop2013 %&gt;% 
+  mutate(iso3c = countrycode(sourcevar = region, origin = &quot;country.name&quot;, destination = &quot;iso3c&quot;))</code></pre>
+<pre><code>
+Error in countrycode(sourcevar = region, origin = &quot;country.name&quot;, destination = &quot;iso3c&quot;): could not find function &quot;countrycode&quot;</code></pre>
+<pre class="r"><code>
+world &lt;- world %&gt;% 
+  mutate(iso3c = countrycode(sourcevar = region, origin = &quot;country.name&quot;, destination = &quot;iso3c&quot;))</code></pre>
+<pre><code>
+Error in countrycode(sourcevar = region, origin = &quot;country.name&quot;, destination = &quot;iso3c&quot;): could not find function &quot;countrycode&quot;</code></pre>
+<pre class="r"><code>
+world %&gt;% 
+  filter(is.na(iso3c) == TRUE) %&gt;% 
+  select(region) %&gt;% 
+  distinct()</code></pre>
+<pre><code>
+Error: object &#39;iso3c&#39; not found</code></pre>
 <pre class="r"><code>
 left_join(world, pop2013, by = &quot;region&quot;) %&gt;% 
   ggplot() + 
   geom_polygon(aes(x = long, y = lat, group = group, fill = log(population)),
-               colour = &quot;black&quot;, size = 0.1)</code></pre>
+               colour = &quot;black&quot;, size = 0.1) + 
+  scale_fill_continuous(name = &quot;Population (log)&quot;, low = &quot;lightblue&quot;, high = &quot;darkblue&quot;)</code></pre>
 <p><img src="map_files/figure-html5/unnamed-chunk-12-1.png" width="624" /></p>
 </div>
-<aside>
-必ずしも両方のデータセットで国名が一致していないので、いくつか欠損していますが、ご容赦下さい。
-</aside>
 <p><code>geom_sf()</code>でも同じです。</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
@@ -1362,7 +1379,8 @@ world %&gt;%
   geom_polygon(aes(x = long, y = lat, group = group), 
                fill = &quot;lightgray&quot;, colour = &quot;black&quot;, size = 0.1) + 
   geom_path(aes(x = long, y = lat, colour = hpa, group = id),
-            data = df_typhoon)</code></pre>
+            data = df_typhoon) + 
+  scale_colour_continuous(low = &quot;lightblue&quot;, high = &quot;darkblue&quot;)</code></pre>
 <p><img src="map_files/figure-html5/unnamed-chunk-23-1.png" width="624" /></p>
 </div>
 <ul>
